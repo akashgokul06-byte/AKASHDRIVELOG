@@ -2003,8 +2003,18 @@
         }
 
         if (selectedVeh && selectedVeh !== 'ALL') {
-          matchVeh = (j.vehicleId === selectedVeh) || 
-                     (j.vehicle && j.vehicle.toLowerCase() === selectedVeh.toLowerCase());
+          const targetVeh = vehicles.find(v => v.id === selectedVeh);
+          const targetId = (selectedVeh || '').toLowerCase().trim();
+          const targetName = targetVeh ? targetVeh.name.toLowerCase().trim() : targetId;
+
+          const jVehId = (j.vehicleId || '').toLowerCase().trim();
+          const jVehName = (j.vehicle || '').toLowerCase().trim();
+
+          matchVeh = (jVehId && jVehId === targetId) ||
+                     (jVehName && jVehName === targetName) ||
+                     (targetName && jVehName.includes(targetName)) ||
+                     (targetName && targetName.includes(jVehName)) ||
+                     (targetId && jVehName.includes(targetId));
         }
 
         return matchDate && matchVeh;
@@ -2183,6 +2193,17 @@
           // 1. Sync Journeys
           if (Array.isArray(data.journeys)) {
             journeys = data.journeys;
+            // Normalize vehicleId for imported sheet journeys
+            journeys.forEach(j => {
+              if (!j.vehicleId && j.vehicle) {
+                const found = vehicles.find(v => 
+                  v.name.toLowerCase() === j.vehicle.toLowerCase() ||
+                  j.vehicle.toLowerCase().includes(v.id.toLowerCase()) ||
+                  v.name.toLowerCase().includes(j.vehicle.toLowerCase())
+                );
+                if (found) j.vehicleId = found.id;
+              }
+            });
             localStorage.setItem('akash_drive_journeys_v4', JSON.stringify(journeys));
           }
           // 2. Sync Fuel Entries
@@ -2300,6 +2321,18 @@
     window.addEventListener('DOMContentLoaded', () => {
       applyWallpaper(activeWallpaper);
       document.getElementById('journey-date').value = new Date().toISOString().split('T')[0];
+      // Normalize any existing journeys missing vehicleId
+      journeys.forEach(j => {
+        if (!j.vehicleId && j.vehicle) {
+          const found = vehicles.find(v => 
+            v.name.toLowerCase() === j.vehicle.toLowerCase() ||
+            j.vehicle.toLowerCase().includes(v.id.toLowerCase()) ||
+            v.name.toLowerCase().includes(j.vehicle.toLowerCase())
+          );
+          if (found) j.vehicleId = found.id;
+        }
+      });
+      localStorage.setItem('akash_drive_journeys_v4', JSON.stringify(journeys));
       updateSheetBadge();
       renderVehicleButtons();
       renderDashboardStats();
