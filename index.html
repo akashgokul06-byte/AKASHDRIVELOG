@@ -496,7 +496,7 @@
         <div class="flex flex-wrap justify-between items-center gap-3 p-4 rounded-xl bg-[#091524] border border-[#132840]">
           <div>
             <h2 class="font-orbitron text-sm font-extrabold uppercase text-amber-400"><i class="fa-solid fa-vault mr-2"></i> Cloud Document Vault</h2>
-            <p class="text-xs font-rajdhani text-slate-400">Store RC, License, Insurance per vehicle & General Docs. Drag cards to reorder.</p>
+            <p class="text-xs font-rajdhani text-slate-400">Store RC, License, Insurance per vehicle & General Docs. Drag cards to reorder or edit.</p>
           </div>
           <div class="flex gap-2">
             <button onclick="openUploadDocModal()" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-orbitron text-xs font-bold rounded-lg shadow-md">+ Vehicle Doc</button>
@@ -783,6 +783,58 @@
           <input type="text" id="gen-doc-notes" placeholder="Additional details..." class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
         </div>
         <button type="submit" class="w-full py-3 mt-2 bg-amber-500 text-black font-orbitron font-black text-xs uppercase rounded-xl">Save General Document</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT DOCUMENT MODAL -->
+  <div id="edit-doc-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-[#091524] border border-amber-500/60 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-orbitron text-sm font-bold uppercase text-amber-400"><i class="fa-solid fa-pen-to-square text-cyan-400 mr-2"></i> Edit Document</h3>
+        <button onclick="closeEditDocModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="saveEditedDocument(event)" class="space-y-3">
+        <input type="hidden" id="edit-doc-id" />
+        <input type="hidden" id="edit-doc-is-general" />
+        <div id="edit-doc-veh-container">
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Vehicle</label>
+          <select id="edit-doc-veh-select" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200"></select>
+        </div>
+        <div id="edit-doc-title-container" class="hidden">
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Document Title</label>
+          <input type="text" id="edit-doc-title" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+        </div>
+        <div id="edit-doc-type-container">
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Document Type</label>
+          <select id="edit-doc-type" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200">
+            <option value="RC Book">RC Book (Registration)</option>
+            <option value="Insurance">Insurance Policy</option>
+            <option value="Driving License">Driving License</option>
+            <option value="PUC Certificate">PUC Certificate</option>
+            <option value="Other Service Bill">Other Service Bill</option>
+          </select>
+        </div>
+        <div id="edit-doc-cat-container" class="hidden">
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Category / Tag</label>
+          <input type="text" id="edit-doc-category" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Expiry Date</label>
+          <input type="date" id="edit-doc-expiry" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Google Drive Share Link (or File URL)</label>
+          <input type="text" id="edit-doc-url" required class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-300 font-mono" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Notes / Policy Number</label>
+          <input type="text" id="edit-doc-notes" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+        </div>
+        <div class="pt-2 border-t border-slate-800 flex justify-end gap-2">
+          <button type="button" onclick="closeEditDocModal()" class="px-4 py-2 rounded-lg text-xs font-rajdhani uppercase text-slate-400 bg-slate-800">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-lg text-xs font-orbitron uppercase bg-amber-500 text-black font-bold">Save Changes</button>
+        </div>
       </form>
     </div>
   </div>
@@ -1096,6 +1148,7 @@
       const modalVehSelect = document.getElementById('modal-veh-select');
       const calcVehSelect = document.getElementById('calc-veh-select');
       const docVehSelect = document.getElementById('doc-veh-select');
+      const editDocVehSelect = document.getElementById('edit-doc-veh-select');
       const filterVehSelect = document.getElementById('filter-journey-vehicle');
 
       container.innerHTML = '';
@@ -1103,6 +1156,7 @@
       modalVehSelect.innerHTML = '';
       calcVehSelect.innerHTML = '';
       if (docVehSelect) docVehSelect.innerHTML = '';
+      if (editDocVehSelect) editDocVehSelect.innerHTML = '';
 
       if (filterVehSelect) {
         const savedVal = filterVehSelect.value || 'ALL';
@@ -1133,6 +1187,7 @@
         modalVehSelect.add(new Option(v.name, v.id));
         calcVehSelect.add(new Option(v.name, v.id));
         if (docVehSelect) docVehSelect.add(new Option(v.name, v.id));
+        if (editDocVehSelect) editDocVehSelect.add(new Option(v.name, v.id));
       });
 
       const activeObj = vehicles.find(v => v.id === currentVehicleId) || vehicles[0];
@@ -1539,6 +1594,82 @@
       showAppToast('General document saved & synced!');
     }
 
+    function openEditDocModal(id, isGeneral = false) {
+      if (isGeneral) {
+        const d = generalDocs.find(item => item.id === id);
+        if (!d) return;
+        document.getElementById('edit-doc-id').value = d.id;
+        document.getElementById('edit-doc-is-general').value = "true";
+        document.getElementById('edit-doc-veh-container').classList.add('hidden');
+        document.getElementById('edit-doc-type-container').classList.add('hidden');
+        document.getElementById('edit-doc-title-container').classList.remove('hidden');
+        document.getElementById('edit-doc-cat-container').classList.remove('hidden');
+        document.getElementById('edit-doc-title').value = d.title || '';
+        document.getElementById('edit-doc-category').value = d.category || '';
+        document.getElementById('edit-doc-expiry').value = d.expiry !== 'No Expiry' ? d.expiry : '';
+        document.getElementById('edit-doc-url').value = d.url || '';
+        document.getElementById('edit-doc-notes').value = d.notes || '';
+      } else {
+        const d = vaultDocs.find(item => item.id === id);
+        if (!d) return;
+        document.getElementById('edit-doc-id').value = d.id;
+        document.getElementById('edit-doc-is-general').value = "false";
+        document.getElementById('edit-doc-veh-container').classList.remove('hidden');
+        document.getElementById('edit-doc-type-container').classList.remove('hidden');
+        document.getElementById('edit-doc-title-container').classList.add('hidden');
+        document.getElementById('edit-doc-cat-container').classList.add('hidden');
+        document.getElementById('edit-doc-veh-select').value = d.vehicleId || vehicles[0].id;
+        document.getElementById('edit-doc-type').value = d.type || 'RC Book';
+        document.getElementById('edit-doc-expiry').value = d.expiry !== 'No Expiry' ? d.expiry : '';
+        document.getElementById('edit-doc-url').value = d.url || '';
+        document.getElementById('edit-doc-notes').value = d.notes || '';
+      }
+      document.getElementById('edit-doc-modal').classList.remove('hidden');
+    }
+
+    function closeEditDocModal() { document.getElementById('edit-doc-modal').classList.add('hidden'); }
+
+    async function saveEditedDocument(e) {
+      e.preventDefault();
+      const id = Number(document.getElementById('edit-doc-id').value);
+      const isGeneral = document.getElementById('edit-doc-is-general').value === "true";
+
+      if (isGeneral) {
+        const idx = generalDocs.findIndex(item => item.id === id);
+        if (idx === -1) return;
+        generalDocs[idx] = {
+          ...generalDocs[idx],
+          title: document.getElementById('edit-doc-title').value.trim(),
+          category: document.getElementById('edit-doc-category').value.trim() || 'General',
+          expiry: document.getElementById('edit-doc-expiry').value || 'No Expiry',
+          url: document.getElementById('edit-doc-url').value.trim(),
+          notes: document.getElementById('edit-doc-notes').value.trim()
+        };
+        localStorage.setItem('akash_drive_general_vault_v5', JSON.stringify(generalDocs));
+        if (webhookUrl) await postToGoogleSheets('sync_general_vault', generalDocs);
+      } else {
+        const idx = vaultDocs.findIndex(item => item.id === id);
+        if (idx === -1) return;
+        const vehId = document.getElementById('edit-doc-veh-select').value;
+        const vObj = vehicles.find(v => v.id === vehId) || vehicles[0];
+        vaultDocs[idx] = {
+          ...vaultDocs[idx],
+          vehicleId: vObj.id,
+          vehicleName: vObj.name,
+          type: document.getElementById('edit-doc-type').value,
+          expiry: document.getElementById('edit-doc-expiry').value || 'No Expiry',
+          url: document.getElementById('edit-doc-url').value.trim(),
+          notes: document.getElementById('edit-doc-notes').value.trim()
+        };
+        localStorage.setItem('akash_drive_vault_v5', JSON.stringify(vaultDocs));
+        if (webhookUrl) await postToGoogleSheets('sync_vault', vaultDocs);
+      }
+
+      closeEditDocModal();
+      renderDocumentVault();
+      showAppToast('Document updated & synced!');
+    }
+
     function renderDocumentVault() {
       const genGrid = document.getElementById('general-docs-grid');
       if (genGrid) {
@@ -1581,7 +1712,10 @@
                   <span class="font-orbitron text-xs font-bold text-slate-200"><i class="fa-solid fa-grip-vertical text-slate-600 mr-1.5 cursor-grab"></i>${d.title}</span>
                   <div class="text-[9px] font-rajdhani text-cyan-400 uppercase">${d.category}</div>
                 </div>
-                <button onclick="deleteGeneralDoc(${d.id})" class="text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="openEditDocModal(${d.id}, true)" class="text-amber-400 hover:text-amber-300 text-xs"><i class="fa-solid fa-pen-to-square"></i></button>
+                  <button onclick="deleteGeneralDoc(${d.id})" class="text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                </div>
               </div>
               <div class="text-[10px] text-slate-400">Expiry: ${d.expiry}</div>
               <div class="text-[10px] text-slate-400 truncate">${d.notes || 'No notes'}</div>
@@ -1612,7 +1746,10 @@
                 ondragstart="draggedDocId=${d.id}" ondragover="event.preventDefault()" ondrop="handleDropDoc(event, '${v.id}', ${d.id})">
                 <div class="flex justify-between items-start">
                   <span class="font-orbitron text-xs font-bold text-slate-200"><i class="fa-solid fa-grip-vertical text-slate-600 mr-1.5 cursor-grab"></i>${d.type}</span>
-                  <button onclick="deleteVaultDoc(${d.id})" class="text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                  <div class="flex items-center gap-1.5">
+                    <button onclick="openEditDocModal(${d.id}, false)" class="text-amber-400 hover:text-amber-300 text-xs"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button onclick="deleteVaultDoc(${d.id})" class="text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                  </div>
                 </div>
                 <div class="text-[10px] text-slate-400">Expiry: ${d.expiry}</div>
                 <div class="text-[10px] text-slate-400 truncate">${d.notes || 'No notes'}</div>
