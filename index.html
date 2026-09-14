@@ -2305,6 +2305,7 @@
       const idx = journeys.findIndex(item => item.id === id);
       if (idx === -1) return;
 
+      const oldJourney = { ...journeys[idx] };
       const chosenVehId = document.getElementById('edit-journey-vehicle').value;
       const vehObj = vehicles.find(v => v.id === chosenVehId) || vehicles[0];
 
@@ -2329,16 +2330,33 @@
       renderDashboardStats();
 
       if (webhookUrl) {
-        await postToGoogleSheets('edit_journey', updated);
+        showAppToast('Updating Google Sheets...');
+        await postToGoogleSheets('edit_journey', {
+          ...updated,
+          rowIndex: oldJourney.rowIndex || null,
+          originalTripName: oldJourney.tripName,
+          originalDate: oldJourney.date,
+          originalStart: oldJourney.startPlace,
+          originalDest: oldJourney.destination
+        });
+        showAppToast('Journey updated in app & Google Sheets!');
+      } else {
+        showAppToast('Journey updated successfully!');
       }
-      showAppToast('Journey updated successfully!');
     }
 
-    function removeJourney(id) {
+    async function removeJourney(id) {
+      const toDelete = journeys.find(j => j.id === id);
       journeys = journeys.filter(j => j.id !== id);
       localStorage.setItem('akash_drive_journeys_v4', JSON.stringify(journeys));
       renderDashboardStats();
-      showAppToast('Trip removed from logbook');
+      if (webhookUrl && toDelete) {
+        await postToGoogleSheets('delete_journey', {
+          ...toDelete,
+          rowIndex: toDelete.rowIndex || null
+        });
+      }
+      showAppToast('Trip removed from logbook & Sheets');
     }
 
     function wipeAllAppData() {
