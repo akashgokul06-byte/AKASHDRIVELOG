@@ -223,6 +223,11 @@
           <i class="fa-solid fa-sheet-plastic"></i>
           <span id="sheetBtnStatus">Link Google Sheet</span>
         </button>
+        <!-- Two-Way Cloud Sync Button -->
+        <button onclick="syncDataFromSheets(true)" id="btn-sync-cloud" title="Sync & Pull all trips from Google Sheets" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase bg-cyan-950/80 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-900 transition-all shadow-sm">
+          <i class="fa-solid fa-rotate" id="sync-icon"></i>
+          <span>Sync Cloud</span>
+        </button>
         <div class="hidden sm:block text-right">
           <div class="text-[10px] font-orbitron text-amber-400">GOOD DRIVES</div>
           <div class="text-[10px] font-rajdhani text-slate-400 uppercase">BRIGHTER DAYS</div>
@@ -903,9 +908,15 @@
         <input type="url" id="sheet-url-box" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-300 font-mono focus:outline-none focus:border-amber-500" />
       </div>
 
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeSheetsModal()" class="px-4 py-2 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-400 bg-slate-800 hover:bg-slate-700">Cancel</button>
-        <button onclick="saveSheetsUrl()" class="px-5 py-2 rounded-lg text-xs font-orbitron font-bold uppercase bg-gradient-to-r from-emerald-500 to-emerald-600 text-black shadow-lg">Save & Connect</button>
+      <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-slate-800">
+        <button type="button" onclick="syncDataFromSheets(true); closeSheetsModal();" class="px-3.5 py-2 rounded-lg text-xs font-rajdhani font-bold uppercase bg-cyan-950 border border-cyan-500/60 text-cyan-300 hover:bg-cyan-900 transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-cloud-arrow-down"></i>
+          <span>Pull & Restore Data Now</span>
+        </button>
+        <div class="flex gap-2">
+          <button onclick="closeSheetsModal()" class="px-4 py-2 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-400 bg-slate-800 hover:bg-slate-700">Cancel</button>
+          <button onclick="saveSheetsUrl()" class="px-5 py-2 rounded-lg text-xs font-orbitron font-bold uppercase bg-gradient-to-r from-emerald-500 to-emerald-600 text-black shadow-lg">Save & Connect</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2151,7 +2162,63 @@
       localStorage.setItem('akash_sheets_webhook_url', u);
       updateSheetBadge();
       closeSheetsModal();
-      showAppToast('Google Sheets Webhook connected successfully!');
+      showAppToast('Google Sheets connected! Syncing cloud data...');
+      syncDataFromSheets(true);
+    }
+
+    // TWO-WAY CLOUD SYNC: Pulls data from Google Sheet to mobile/desktop
+    async function syncDataFromSheets(notify = false) {
+      if (!webhookUrl) {
+        if (notify) openSheetsModal();
+        return;
+      }
+      const syncIcon = document.getElementById('sync-icon');
+      if (syncIcon) syncIcon.classList.add('fa-spin');
+
+      try {
+        const response = await fetch(webhookUrl);
+        const data = await response.json();
+
+        if (data && data.status === 'success') {
+          // 1. Sync Journeys
+          if (Array.isArray(data.journeys)) {
+            journeys = data.journeys;
+            localStorage.setItem('akash_drive_journeys_v4', JSON.stringify(journeys));
+          }
+          // 2. Sync Fuel Entries
+          if (Array.isArray(data.fuel)) {
+            fuelEntries = data.fuel;
+            localStorage.setItem('akash_drive_fuel_v4', JSON.stringify(fuelEntries));
+          }
+          // 3. Sync Maintenance Entries
+          if (Array.isArray(data.maint)) {
+            maintEntries = data.maint;
+            localStorage.setItem('akash_drive_maint_v4', JSON.stringify(maintEntries));
+          }
+          // 4. Sync Registered Fleet
+          if (Array.isArray(data.vehicles) && data.vehicles.length > 0) {
+            vehicles = data.vehicles;
+            localStorage.setItem('akash_drivelog_vehicles_fleet_v4', JSON.stringify(vehicles));
+            renderVehicleButtons();
+          }
+
+          renderDashboardStats();
+          if (notify) {
+            showAppToast(`Synced ${journeys.length} trips & fleet from Google Sheet!`);
+          }
+        } else if (data && data.status === 'online') {
+          if (notify) {
+            showAppToast('Connected! Update your Apps Script to enable reading data.', true);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to sync from Google Sheets:', err);
+        if (notify) {
+          showAppToast('Could not fetch data from Google Sheets. Check script URL.', true);
+        }
+      } finally {
+        if (syncIcon) syncIcon.classList.remove('fa-spin');
+      }
     }
 
     function updateSheetBadge() {
@@ -2236,6 +2303,9 @@
       updateSheetBadge();
       renderVehicleButtons();
       renderDashboardStats();
+      if (webhookUrl) {
+        syncDataFromSheets(false);
+      }
     });
   </script>
 </body>
