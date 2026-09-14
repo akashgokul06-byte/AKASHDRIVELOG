@@ -58,7 +58,7 @@
       transition: background-image 0.5s ease-in-out;
     }
 
-    /* ZERO WATERMARK & ZERO API-KEY DARK MAP ENGINE */
+    /* WATERMARK-FREE DARK MAP ENGINE */
     .leaflet-container {
       background: #06101c !important;
       font-family: 'Rajdhani', sans-serif;
@@ -1325,7 +1325,7 @@
           const targetName = targetVeh ? targetVeh.name.toLowerCase() : vehVal.toLowerCase();
           const jId = (j.vehicleId || '').toLowerCase();
           const jName = (j.vehicle || '').toLowerCase();
-          matchVeh = jId === vehVal.toLowerCase() || jName.includes(targetName) || targetName.includes(jName);
+          matchVeh = jId === vehVal.toLowerCase() || jName.includes(targetName) || targetName.includes(jName) || targetName === jName;
         }
         return matchDate && matchVeh;
       });
@@ -1420,7 +1420,7 @@
       const old = journeys[idx];
       const vObj = vehicles.find(v => v.id === document.getElementById('edit-journey-vehicle').value) || vehicles[0];
 
-      journeys[idx] = {
+      const updated = {
         ...old,
         date: document.getElementById('edit-journey-date').value,
         vehicle: vObj.name,
@@ -1431,17 +1431,21 @@
         startOdo: document.getElementById('edit-start-odo').value !== '' ? parseFloat(document.getElementById('edit-start-odo').value) : '',
         endOdo: document.getElementById('edit-end-odo').value !== '' ? parseFloat(document.getElementById('edit-end-odo').value) : '',
         distance: parseFloat(document.getElementById('edit-distance').value) || 0,
-        notes: document.getElementById('edit-notes').value.trim()
+        notes: document.getElementById('edit-notes').value.trim(),
+        originalDate: old.date,
+        originalTripName: old.tripName,
+        originalStart: old.startPlace
       };
 
+      journeys[idx] = updated;
       localStorage.setItem('akash_drive_journeys_v4', JSON.stringify(journeys));
       closeEditJourneyModal();
       renderDashboardStats();
 
       if (webhookUrl) {
         showAppToast('Updating Google Sheets...');
-        await postToGoogleSheets('edit_journey', journeys[idx]);
-        setTimeout(() => syncDataFromSheets(false), 1200);
+        await postToGoogleSheets('edit_journey', updated);
+        setTimeout(() => syncDataFromSheets(false), 1500);
       }
       showAppToast('Journey updated successfully!');
     }
