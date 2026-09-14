@@ -656,7 +656,7 @@
     </main>
   </section>
 
-  <!-- WALLPAPER MODAL -->
+  <!-- MODALS (WALLPAPER, ADD VEHICLE, VAULT, EDIT, ETC.) -->
   <div id="wallpaper-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-amber-500/50 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -677,7 +677,6 @@
     </div>
   </div>
 
-  <!-- ADD VEHICLE MODAL -->
   <div id="add-vehicle-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-amber-500/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -718,7 +717,6 @@
     </div>
   </div>
 
-  <!-- UPLOAD VEHICLE DOCUMENT MODAL -->
   <div id="upload-doc-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-cyan-500/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -757,7 +755,6 @@
     </div>
   </div>
 
-  <!-- UPLOAD GENERAL / OTHER DOCUMENT MODAL (Standalone) -->
   <div id="upload-general-doc-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-amber-500/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -790,7 +787,6 @@
     </div>
   </div>
 
-  <!-- MANAGE FLEET MODAL -->
   <div id="manage-vehicles-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-red-500/50 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -805,7 +801,6 @@
     </div>
   </div>
 
-  <!-- CONFIRM DELETE MODAL -->
   <div id="confirm-delete-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-red-500/70 rounded-2xl max-w-sm w-full p-5 space-y-4 text-center shadow-xl">
       <div class="w-12 h-12 mx-auto rounded-full bg-red-950/80 border border-red-500/60 flex items-center justify-center text-red-400 text-xl"><i class="fa-solid fa-trash-can"></i></div>
@@ -820,7 +815,6 @@
     </div>
   </div>
 
-  <!-- GOOGLE SHEETS MODAL -->
   <div id="sheets-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-amber-500/50 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -841,7 +835,6 @@
     </div>
   </div>
 
-  <!-- FUEL / SERVICE LOG MODAL -->
   <div id="log-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-[#132840] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -897,7 +890,6 @@
     </div>
   </div>
 
-  <!-- JOURNEY DETAIL INSPECTION MODAL -->
   <div id="journey-detail-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-cyan-500/60 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -912,7 +904,6 @@
     </div>
   </div>
 
-  <!-- EDIT JOURNEY MODAL -->
   <div id="edit-journey-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-amber-500/60 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -972,7 +963,6 @@
     </div>
   </div>
 
-  <!-- TOAST NOTIFICATION -->
   <div id="toast-notify" style="z-index: 99999;" class="fixed bottom-6 right-6 bg-[#091524] border border-cyan-500/80 text-cyan-300 px-4 py-2.5 rounded-xl shadow-2xl font-rajdhani text-xs font-bold uppercase tracking-wider flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
     <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
     <span id="toast-notify-text">Notification</span>
@@ -1460,7 +1450,6 @@
         container.appendChild(card);
       });
 
-      // Render Individual Vehicle Tyre Health & 15-Day Pressure Reminders
       const tyreContainer = document.getElementById('tyre-health-container');
       if (tyreContainer) {
         tyreContainer.innerHTML = '';
@@ -1859,9 +1848,7 @@
         startOdo: document.getElementById('edit-start-odo').value !== '' ? parseFloat(document.getElementById('edit-start-odo').value) : '',
         endOdo: document.getElementById('edit-end-odo').value !== '' ? parseFloat(document.getElementById('edit-end-odo').value) : '',
         distance: parseFloat(document.getElementById('edit-distance').value) || 0,
-        notes: document.getElementById('edit-notes').value.trim(),
-        originalDate: old.date,
-        originalTripName: old.tripName
+        notes: document.getElementById('edit-notes').value.trim()
       };
 
       journeys[idx] = updated;
