@@ -1011,11 +1011,112 @@
       <div id="journey-detail-content" class="space-y-3 font-rajdhani">
       </div>
 
-      <div class="pt-2 border-t border-slate-800 flex justify-end">
+      <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
+        <button id="modal-btn-edit-shortcut" onclick="" class="px-4 py-2 rounded-lg text-xs font-orbitron font-bold uppercase bg-amber-500/20 border border-amber-500/60 text-amber-300 hover:bg-amber-500 hover:text-black transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>Edit Journey</span>
+        </button>
         <button onclick="closeJourneyDetailModal()" class="px-5 py-2 rounded-lg text-xs font-orbitron font-bold uppercase bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-lg hover:scale-105 transition-all">
           Close
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: EDIT JOURNEY MODAL                                                 -->
+  <!-- ========================================================================= -->
+  <div id="edit-journey-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-[#091524] border border-amber-500/60 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-[0_0_35px_rgba(245,158,11,0.3)] max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-orbitron text-sm font-bold uppercase text-amber-400 flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-cyan-400"></i> Edit Journey Details
+        </h3>
+        <button onclick="closeEditJourneyModal()" class="text-slate-400 hover:text-white transition-colors">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="edit-journey-form" onsubmit="saveEditedJourney(event)" class="space-y-3">
+        <input type="hidden" id="edit-journey-id" />
+
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
+            <i class="fa-solid fa-gauge mr-1 text-amber-400"></i> Vehicle
+          </label>
+          <select id="edit-journey-vehicle" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-300 font-semibold focus:outline-none focus:border-amber-500">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
+            <i class="fa-solid fa-calendar mr-1 text-cyan-400"></i> Date of Journey
+          </label>
+          <input type="date" id="edit-journey-date" required class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 font-rajdhani" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
+              <i class="fa-solid fa-location-dot mr-1 text-amber-400"></i> Start Place
+            </label>
+            <input type="text" id="edit-start-place" required class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
+              <i class="fa-solid fa-flag-checkered mr-1 text-cyan-400"></i> Destination
+            </label>
+            <input type="text" id="edit-destination" required class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
+            <i class="fa-solid fa-tag mr-1 text-slate-400"></i> Trip Name
+          </label>
+          <input type="text" id="edit-trip-name" placeholder="Name of this trip" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
+              <i class="fa-solid fa-gauge mr-1 text-amber-400"></i> Start Odometer
+            </label>
+            <input type="number" id="edit-start-odo" oninput="calculateEditKmDiff()" placeholder="Optional (km)" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
+              <i class="fa-solid fa-gauge mr-1 text-cyan-400"></i> End Odometer
+            </label>
+            <input type="number" id="edit-end-odo" oninput="calculateEditKmDiff()" placeholder="Optional (km)" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-amber-400 mb-1 flex items-center justify-between">
+            <span class="flex items-center gap-1"><i class="fa-solid fa-route"></i> Distance (KM) *</span>
+            <span id="edit-calc-status" class="text-[9px] text-slate-400">Manual or Auto via Odometer</span>
+          </label>
+          <input type="number" step="0.1" id="edit-distance" required class="w-full bg-[#06101c] border border-amber-500/50 rounded-lg px-3 py-2 text-xs text-amber-300 font-bold font-orbitron focus:outline-none focus:border-amber-500" />
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
+            <i class="fa-solid fa-comment mr-1 text-slate-400"></i> Notes / Remarks
+          </label>
+          <textarea id="edit-notes" rows="2" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"></textarea>
+        </div>
+
+        <div class="pt-2 border-t border-slate-800 flex justify-end gap-2">
+          <button type="button" onclick="closeEditJourneyModal()" class="px-4 py-2 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-400 bg-slate-800 hover:bg-slate-700 transition-all">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-lg text-xs font-orbitron font-bold uppercase bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-lg hover:scale-105 transition-all">
+            Save Changes
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -2058,9 +2159,12 @@
           <td class="p-2.5 font-mono text-slate-400">${j.endOdo || '-'}</td>
           <td class="p-2.5 font-bold text-cyan-400 font-orbitron">${formatKm(j.distance)}</td>
           <td class="p-2.5 text-center">
-            <div class="inline-flex items-center gap-2">
+            <div class="inline-flex items-center gap-1.5">
               <button onclick="viewJourneyDetails(${j.id})" title="View Full Details" class="px-2 py-1 rounded bg-cyan-950/80 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-900 transition-all text-xs">
                 <i class="fa-solid fa-eye"></i>
+              </button>
+              <button onclick="openEditJourneyModal(${j.id})" title="Edit Journey" class="px-2 py-1 rounded bg-amber-950/80 border border-amber-500/50 text-amber-300 hover:bg-amber-900 transition-all text-xs">
+                <i class="fa-solid fa-pen-to-square"></i>
               </button>
               <button onclick="removeJourney(${j.id})" title="Delete Trip" class="px-2 py-1 rounded bg-red-950/70 border border-red-500/50 text-red-400 hover:bg-red-900 transition-all text-xs">
                 <i class="fa-solid fa-trash"></i>
@@ -2132,11 +2236,102 @@
         </div>
       `;
 
+      const shortcutBtn = document.getElementById('modal-btn-edit-shortcut');
+      if (shortcutBtn) {
+        shortcutBtn.onclick = () => {
+          closeJourneyDetailModal();
+          openEditJourneyModal(journeyId);
+        };
+      }
+
       document.getElementById('journey-detail-modal').classList.remove('hidden');
     }
 
     function closeJourneyDetailModal() {
       document.getElementById('journey-detail-modal').classList.add('hidden');
+    }
+
+    function openEditJourneyModal(journeyId) {
+      const j = journeys.find(item => item.id === journeyId);
+      if (!j) return;
+
+      const editVehSelect = document.getElementById('edit-journey-vehicle');
+      editVehSelect.innerHTML = '';
+      vehicles.forEach(v => {
+        const isSel = (v.id === j.vehicleId || v.name.toLowerCase() === (j.vehicle || '').toLowerCase());
+        const opt = new Option(`${v.name} (${v.sublabel || v.category})`, v.id, false, isSel);
+        editVehSelect.add(opt);
+      });
+
+      document.getElementById('edit-journey-id').value = j.id;
+      document.getElementById('edit-journey-date').value = j.date || '';
+      document.getElementById('edit-start-place').value = j.startPlace || '';
+      document.getElementById('edit-destination').value = j.destination || '';
+      document.getElementById('edit-trip-name').value = j.tripName || '';
+      document.getElementById('edit-start-odo').value = j.startOdo !== '' && j.startOdo !== undefined ? j.startOdo : '';
+      document.getElementById('edit-end-odo').value = j.endOdo !== '' && j.endOdo !== undefined ? j.endOdo : '';
+      document.getElementById('edit-distance').value = j.distance || '';
+      document.getElementById('edit-notes').value = j.notes || '';
+      document.getElementById('edit-calc-status').innerText = 'Manual or Auto via Odometer';
+
+      document.getElementById('edit-journey-modal').classList.remove('hidden');
+    }
+
+    function closeEditJourneyModal() {
+      document.getElementById('edit-journey-modal').classList.add('hidden');
+      document.getElementById('edit-journey-form').reset();
+    }
+
+    function calculateEditKmDiff() {
+      const s = parseFloat(document.getElementById('edit-start-odo').value);
+      const e = parseFloat(document.getElementById('edit-end-odo').value);
+      const dist = document.getElementById('edit-distance');
+      const status = document.getElementById('edit-calc-status');
+
+      if (!isNaN(s) && !isNaN(e) && e >= s) {
+        const diff = (e - s).toFixed(1);
+        dist.value = diff;
+        status.innerText = `Auto: ${diff} KM (End - Start)`;
+        status.className = 'text-[9px] text-emerald-400 font-bold';
+      } else {
+        status.innerText = 'Manual or Auto via Odometer';
+        status.className = 'text-[9px] text-slate-400';
+      }
+    }
+
+    async function saveEditedJourney(e) {
+      e.preventDefault();
+      const id = Number(document.getElementById('edit-journey-id').value);
+      const idx = journeys.findIndex(item => item.id === id);
+      if (idx === -1) return;
+
+      const chosenVehId = document.getElementById('edit-journey-vehicle').value;
+      const vehObj = vehicles.find(v => v.id === chosenVehId) || vehicles[0];
+
+      const updated = {
+        ...journeys[idx],
+        date: document.getElementById('edit-journey-date').value,
+        vehicle: vehObj.name,
+        vehicleId: vehObj.id,
+        startPlace: document.getElementById('edit-start-place').value.trim(),
+        destination: document.getElementById('edit-destination').value.trim(),
+        tripName: document.getElementById('edit-trip-name').value.trim() || `${document.getElementById('edit-start-place').value.trim()} to ${document.getElementById('edit-destination').value.trim()}`,
+        startOdo: document.getElementById('edit-start-odo').value !== '' ? parseFloat(document.getElementById('edit-start-odo').value) : '',
+        endOdo: document.getElementById('edit-end-odo').value !== '' ? parseFloat(document.getElementById('edit-end-odo').value) : '',
+        distance: parseFloat(document.getElementById('edit-distance').value) || 0,
+        notes: document.getElementById('edit-notes').value.trim()
+      };
+
+      journeys[idx] = updated;
+      localStorage.setItem('akash_drive_journeys_v4', JSON.stringify(journeys));
+
+      closeEditJourneyModal();
+      renderDashboardStats();
+
+      if (webhookUrl) {
+        await postToGoogleSheets('edit_journey', updated);
+      }
+      showAppToast('Journey updated successfully!');
     }
 
     function removeJourney(id) {
