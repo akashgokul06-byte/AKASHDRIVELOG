@@ -16,6 +16,9 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <!-- Chart.js for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -82,6 +85,18 @@
     ::-webkit-scrollbar-track { background: #06101d; }
     ::-webkit-scrollbar-thumb { background: #1a3250; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+    
+    .draggable-card {
+      cursor: grab;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+    .draggable-card:active {
+      cursor: grabbing;
+    }
+    .dragging {
+      opacity: 0.4;
+      border: 2px dashed #f59e0b !important;
+    }
   </style>
 </head>
 
@@ -182,26 +197,32 @@
           <h1 class="font-orbitron text-base sm:text-lg font-black tracking-wider text-amber-400">
             AKASH <span class="text-cyan-400">DRIVELOG</span>
           </h1>
-          <p class="text-[8px] font-rajdhani font-bold text-cyan-500 tracking-widest uppercase">
-            PERSONAL DRIVING INTELLIGENCE SYSTEM
+          <p class="text-[8px] font-rajdhani font-bold text-cyan-500 tracking-widest uppercase" id="nav-email-display">
+            NOTIFICATION: akashgkbt@gmail.com
           </p>
         </div>
       </div>
 
-      <div class="flex items-center gap-1 bg-[#0b1b30] p-1 rounded-xl border border-slate-800">
-        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="px-3 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase transition-all bg-amber-500 text-black shadow-md">
+      <div class="flex items-center gap-1 bg-[#0b1b30] p-1 rounded-xl border border-slate-800 flex-wrap">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase transition-all bg-amber-500 text-black shadow-md">
           <i class="fa-solid fa-house mr-1"></i> Home
         </button>
-        <button onclick="switchTab('fuel')" id="nav-fuel" class="px-3 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all">
+        <button onclick="switchTab('fuel')" id="nav-fuel" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all">
           <i class="fa-solid fa-gas-pump mr-1"></i> Fuel & Maint.
         </button>
-        <button onclick="switchTab('reminders')" id="nav-reminders" class="px-3 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all">
-          <i class="fa-solid fa-bell mr-1"></i> Service Alerts
+        <button onclick="switchTab('reminders')" id="nav-reminders" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all">
+          <i class="fa-solid fa-bell mr-1"></i> Reminders & Tyre
         </button>
-        <button onclick="switchTab('calculator')" id="nav-calculator" class="px-3 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all">
-          <i class="fa-solid fa-calculator mr-1"></i> Mileage Calc
+        <button onclick="switchTab('vault')" id="nav-vault" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all">
+          <i class="fa-solid fa-vault mr-1"></i> Doc Vault
         </button>
-        <button onclick="switchTab('history')" id="nav-history" class="px-3 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all">
+        <button onclick="switchTab('analytics')" id="nav-analytics" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all">
+          <i class="fa-solid fa-chart-pie mr-1"></i> Analytics
+        </button>
+        <button onclick="switchTab('calculator')" id="nav-calculator" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all">
+          <i class="fa-solid fa-calculator mr-1"></i> Calc
+        </button>
+        <button onclick="switchTab('history')" id="nav-history" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all">
           <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
         </button>
       </div>
@@ -215,15 +236,6 @@
           <i class="fa-solid fa-rotate" id="sync-icon"></i>
           <span>Sync Cloud</span>
         </button>
-        <div class="hidden sm:block text-right">
-          <div class="text-[10px] font-orbitron text-amber-400">GOOD DRIVES</div>
-          <div class="text-[10px] font-rajdhani text-slate-400 uppercase">BRIGHTER DAYS</div>
-        </div>
-        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-cyan-400 p-0.5">
-          <div class="w-full h-full bg-[#071322] rounded-full flex items-center justify-center text-amber-400 font-bold text-xs">
-            A
-          </div>
-        </div>
       </div>
     </nav>
 
@@ -248,9 +260,7 @@
             </div>
           </div>
 
-          <div id="vehicle-buttons-container" class="flex flex-wrap gap-3 max-w-4xl">
-            <!-- JS populated -->
-          </div>
+          <div id="vehicle-buttons-container" class="flex flex-wrap gap-3 max-w-4xl"></div>
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -319,7 +329,6 @@
                   <i class="fa-solid fa-gauge mr-1 text-amber-400"></i> Active Vehicle
                 </label>
                 <select id="journey-vehicle-select" onchange="changeVehicle(this.value)" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-300 font-semibold focus:outline-none focus:border-amber-500">
-                  <!-- JS populated -->
                 </select>
               </div>
 
@@ -330,61 +339,48 @@
                 <input type="date" id="journey-date" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 font-rajdhani" />
               </div>
 
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
-                    <i class="fa-solid fa-location-dot mr-1 text-amber-400"></i> START PLACE
+              <!-- Multi-Stop Route Planner & Toll Calculator -->
+              <div class="space-y-2 p-2.5 rounded-xl bg-[#06101c] border border-amber-500/30">
+                <div class="flex justify-between items-center">
+                  <label class="text-[10px] font-orbitron uppercase text-amber-400 font-bold">
+                    <i class="fa-solid fa-route mr-1"></i> Multi-Stop Planner
                   </label>
-                  <input type="text" id="start-place" placeholder="e.g. Lucknow" required class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" />
+                  <button type="button" onclick="addWaypointField()" class="text-[10px] text-cyan-400 font-bold hover:underline">+ Add Stop</button>
                 </div>
-                <div>
-                  <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
-                    <i class="fa-solid fa-flag-checkered mr-1 text-cyan-400"></i> DESTINATION
-                  </label>
-                  <input type="text" id="destination" placeholder="e.g. Nainital" required class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500" />
+                <div class="grid grid-cols-2 gap-2">
+                  <input type="text" id="start-place" placeholder="Start (e.g. Lucknow)" required class="w-full bg-[#091524] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200" />
+                  <input type="text" id="destination" placeholder="Destination (e.g. Nainital)" required class="w-full bg-[#091524] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200" />
                 </div>
+                <div id="waypoints-container" class="space-y-1.5"></div>
               </div>
 
               <div class="p-2.5 rounded-xl bg-[#06101c] border border-cyan-500/30 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-orbitron text-cyan-400 font-bold flex items-center gap-1.5">
-                    <i class="fa-solid fa-signs-post"></i> OPTIONAL: MAP ROUTE OPTIONS
-                  </span>
-                </div>
-                <button type="button" onclick="calculateRouteOptionsFromMap()" id="btn-calc-routes" class="w-full py-2 bg-gradient-to-r from-cyan-950 to-[#072436] hover:from-cyan-900 hover:to-[#093550] border border-cyan-500/50 hover:border-cyan-400 rounded-lg text-cyan-300 font-orbitron text-[10px] font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2">
+                <button type="button" onclick="calculateMultiStopRoute()" id="btn-calc-routes" class="w-full py-2 bg-gradient-to-r from-cyan-950 to-[#072436] hover:from-cyan-900 hover:to-[#093550] border border-cyan-500/50 hover:border-cyan-400 rounded-lg text-cyan-300 font-orbitron text-[10px] font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2">
                   <i class="fa-solid fa-diamond-turn-right text-cyan-400"></i>
-                  <span>Calculate Routes & Options</span>
+                  <span>Calculate Multi-Stop & Tolls</span>
                 </button>
                 <div id="route-options-container" class="hidden space-y-1.5 pt-1">
                   <div class="text-[9px] font-rajdhani uppercase text-slate-400 font-bold flex justify-between">
-                    <span>SELECT TRAVELLED ROUTE:</span>
-                    <span id="route-count-badge" class="text-amber-400 font-mono">0 Options</span>
+                    <span>ESTIMATED TOLL & DISTANCE:</span>
+                    <span id="toll-est-badge" class="text-amber-400 font-mono">₹0 Toll</span>
                   </div>
-                  <div id="route-options-list" class="space-y-1 max-h-36 overflow-y-auto pr-1"></div>
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-2">
                 <div>
-                  <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
-                    <i class="fa-solid fa-gauge mr-1 text-amber-400"></i> START ODOMETER
-                  </label>
+                  <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">START ODOMETER</label>
                   <input type="number" id="start-odo" oninput="calculateKmDifference()" placeholder="Optional" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
                 </div>
                 <div>
-                  <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">
-                    <i class="fa-solid fa-gauge mr-1 text-cyan-400"></i> END ODOMETER
-                  </label>
+                  <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">END ODOMETER</label>
                   <input type="number" id="end-odo" oninput="calculateKmDifference()" placeholder="Optional" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
                 </div>
               </div>
 
               <div>
-                <label class="block text-[10px] font-orbitron uppercase text-amber-400 mb-1 flex items-center justify-between">
-                  <span class="flex items-center gap-1"><i class="fa-solid fa-route"></i> DISTANCE (KM) *</span>
-                </label>
+                <label class="block text-[10px] font-orbitron uppercase text-amber-400 mb-1">DISTANCE (KM) *</label>
                 <input type="number" step="0.1" id="direct-km" placeholder="Distance in km" required class="w-full bg-[#06101c] border border-amber-500/50 rounded-lg px-3 py-2 text-xs text-amber-300 font-bold font-orbitron" />
-                <p id="calc-status" class="text-[9px] text-slate-400 mt-0.5">Enter directly, select route option, or use odometers.</p>
               </div>
 
               <div>
@@ -458,7 +454,7 @@
         </div>
 
         <div class="bg-[#091524] border border-[#132840] rounded-2xl p-5 shadow-xl space-y-3">
-          <h3 class="font-orbitron text-xs font-bold uppercase text-cyan-400">Maintenance Ledger</h3>
+          <h3 class="font-orbitron text-xs font-bold uppercase text-cyan-400">Maintenance & Toll Ledger</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead class="bg-[#06101c] text-slate-400 font-orbitron uppercase text-[10px]">
@@ -470,14 +466,75 @@
         </div>
       </div>
 
-      <!-- SERVICE ALERTS TAB -->
+      <!-- SERVICE ALERTS & TYRE MONITOR TAB -->
       <div id="tab-content-reminders" class="hidden space-y-6">
-        <div class="flex items-center justify-between p-4 rounded-xl bg-[#091524] border border-[#132840]">
+        <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-[#091524] border border-[#132840]">
           <div>
-            <h2 class="font-orbitron text-sm font-extrabold uppercase text-amber-400">Service Interval Countdown</h2>
+            <h2 class="font-orbitron text-sm font-extrabold uppercase text-amber-400">Reminders, Insurance & Tyre Pressure Monitor</h2>
+            <p class="text-xs font-rajdhani text-slate-400">Notifications sent to <span id="reminder-email-label" class="text-cyan-400 font-bold">akashgkbt@gmail.com</span></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="email" id="custom-reminder-email" placeholder="Change Email ID" class="bg-[#06101c] border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200" />
+            <button onclick="saveReminderEmail()" class="px-3 py-1.5 bg-amber-500 text-black font-orbitron text-xs font-bold rounded-lg">Save Email</button>
           </div>
         </div>
         <div id="reminders-container" class="grid grid-cols-1 md:grid-cols-3 gap-5"></div>
+
+        <!-- Per-Vehicle Tyre Air Pressure Refill Monitor -->
+        <div class="bg-[#091524] border border-[#132840] rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+            <h3 class="font-orbitron text-xs font-bold uppercase text-cyan-400">
+              <i class="fa-solid fa-circle-notch mr-1"></i> Individual Vehicle Tyre Air Pressure (Every 15-Day Reminder)
+            </h3>
+          </div>
+          <div id="tyre-health-container" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </div>
+      </div>
+
+      <!-- DOCUMENT VAULT TAB -->
+      <div id="tab-content-vault" class="hidden space-y-6">
+        <div class="flex flex-wrap justify-between items-center gap-3 p-4 rounded-xl bg-[#091524] border border-[#132840]">
+          <div>
+            <h2 class="font-orbitron text-sm font-extrabold uppercase text-amber-400"><i class="fa-solid fa-vault mr-2"></i> Cloud Document Vault</h2>
+            <p class="text-xs font-rajdhani text-slate-400">Store RC, License, Insurance per vehicle & General Docs. Drag cards to reorder.</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openUploadDocModal()" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-orbitron text-xs font-bold rounded-lg shadow-md">+ Vehicle Doc</button>
+            <button onclick="openUploadGeneralDocModal()" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black font-orbitron text-xs font-bold rounded-lg shadow-md">+ General / Other Doc</button>
+          </div>
+        </div>
+
+        <!-- Universal General Docs Section -->
+        <div class="bg-[#091524] border border-cyan-500/40 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+            <h3 class="font-orbitron text-xs font-bold uppercase text-cyan-400 flex items-center gap-2">
+              <i class="fa-solid fa-folder-open text-amber-400"></i> General & Other Documents (Drag to Rearrange)
+            </h3>
+            <button onclick="openUploadGeneralDocModal()" class="px-3 py-1 rounded bg-cyan-500/15 border border-cyan-500/50 text-cyan-400 text-xs font-bold">+ Upload General Doc</button>
+          </div>
+          <div id="general-docs-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+        </div>
+
+        <!-- Per Vehicle Vaults -->
+        <div id="vault-docs-container" class="space-y-6"></div>
+      </div>
+
+      <!-- ANALYTICS TAB -->
+      <div id="tab-content-analytics" class="hidden space-y-6">
+        <div class="p-4 rounded-xl bg-[#091524] border border-[#132840]">
+          <h2 class="font-orbitron text-sm font-extrabold uppercase text-amber-400"><i class="fa-solid fa-chart-pie mr-2"></i> Monthly & Yearly Driving Analytics</h2>
+          <p class="text-xs font-rajdhani text-slate-400">Detailed visual metrics across your fleet.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-[#091524] border border-[#132840] rounded-2xl p-5 shadow-xl">
+            <h3 class="font-orbitron text-xs font-bold text-cyan-400 mb-3 uppercase">Vehicle Fleet Utilization (%)</h3>
+            <div class="relative h-64"><canvas id="fleetPieChart"></canvas></div>
+          </div>
+          <div class="bg-[#091524] border border-[#132840] rounded-2xl p-5 shadow-xl">
+            <h3 class="font-orbitron text-xs font-bold text-amber-400 mb-3 uppercase">Monthly Distance Driven (KM)</h3>
+            <div class="relative h-64"><canvas id="monthlyBarChart"></canvas></div>
+          </div>
+        </div>
       </div>
 
       <!-- MILEAGE CALCULATOR TAB -->
@@ -539,7 +596,6 @@
             </div>
           </div>
 
-          <!-- DEDICATED HISTORY FILTER BAR: DATE & VEHICLE -->
           <div class="p-3.5 rounded-xl bg-[#06101c] border border-cyan-500/40 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="text-[11px] font-orbitron uppercase text-cyan-400 font-bold flex items-center gap-2">
@@ -604,11 +660,11 @@
   <div id="wallpaper-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-amber-500/50 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="font-orbitron text-sm font-bold uppercase text-amber-400"><i class="fa-brands fa-google-drive text-emerald-400"></i> Set Custom Wallpaper</h3>
+        <h3 class="font-orbitron text-sm font-bold uppercase text-amber-400"><i class="fa-solid fa-image text-amber-400"></i> Set Custom Wallpaper</h3>
         <button onclick="closeWallpaperModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <div>
-        <label class="block text-[10px] font-orbitron uppercase text-slate-300 mb-1">Google Drive Share Link</label>
+        <label class="block text-[10px] font-orbitron uppercase text-slate-300 mb-1">Google Drive Share Link (Recommended for multi-device sync)</label>
         <input type="text" id="gdrive-input-url" placeholder="https://drive.google.com/file/d/.../view" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-300 font-mono" />
       </div>
       <div class="flex justify-between items-center pt-2">
@@ -658,6 +714,78 @@
           </div>
         </div>
         <button type="submit" class="w-full py-3 mt-2 bg-amber-500 text-black font-orbitron font-black text-xs uppercase rounded-xl">Add Vehicle</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- UPLOAD VEHICLE DOCUMENT MODAL -->
+  <div id="upload-doc-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-[#091524] border border-cyan-500/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-orbitron text-sm font-bold uppercase text-cyan-400"><i class="fa-solid fa-cloud-arrow-up mr-2"></i> Upload Vehicle Document</h3>
+        <button onclick="closeUploadDocModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="handleDocumentUpload(event)" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Vehicle</label>
+          <select id="doc-veh-select" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200"></select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Document Type</label>
+          <select id="doc-type" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200">
+            <option value="RC Book">RC Book (Registration)</option>
+            <option value="Insurance">Insurance Policy</option>
+            <option value="Driving License">Driving License</option>
+            <option value="PUC Certificate">PUC Certificate</option>
+            <option value="Other Service Bill">Other Service Bill</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Expiry Date (Optional)</label>
+          <input type="date" id="doc-expiry" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Google Drive Share Link (or File URL)</label>
+          <input type="text" id="doc-gdrive-url" placeholder="https://drive.google.com/file/d/.../view" required class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-300 font-mono" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Notes / Policy Number / Document Name</label>
+          <input type="text" id="doc-notes" placeholder="e.g. Policy #98234729 or Service Bill Receipt" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+        </div>
+        <button type="submit" class="w-full py-3 mt-2 bg-cyan-500 text-black font-orbitron font-black text-xs uppercase rounded-xl">Save to Cloud Vault</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- UPLOAD GENERAL / OTHER DOCUMENT MODAL (Standalone) -->
+  <div id="upload-general-doc-modal" style="z-index: 99999;" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-[#091524] border border-amber-500/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-orbitron text-sm font-bold uppercase text-amber-400"><i class="fa-solid fa-folder-plus mr-2"></i> Upload General / Other Document</h3>
+        <button onclick="closeUploadGeneralDocModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="handleGeneralDocumentUpload(event)" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Document Title / Name</label>
+          <input type="text" id="gen-doc-title" placeholder="e.g. ID Card, Passbook, Insurance Receipt" required class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Category / Tag</label>
+          <input type="text" id="gen-doc-category" placeholder="e.g. Personal ID, Finance, Receipts" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Expiry Date (Optional)</label>
+          <input type="date" id="gen-doc-expiry" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Google Drive Share Link (or File URL)</label>
+          <input type="text" id="gen-doc-url" placeholder="https://drive.google.com/file/d/.../view" required class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-300 font-mono" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Notes / Description</label>
+          <input type="text" id="gen-doc-notes" placeholder="Additional details..." class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+        </div>
+        <button type="submit" class="w-full py-3 mt-2 bg-amber-500 text-black font-orbitron font-black text-xs uppercase rounded-xl">Save General Document</button>
       </form>
     </div>
   </div>
@@ -748,8 +876,8 @@
         </div>
         <div id="modal-service-section" class="space-y-3 hidden">
           <div>
-            <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Service Done</label>
-            <input type="text" id="m-service-name" placeholder="e.g. Engine Oil" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
+            <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Service / Toll Expense</label>
+            <input type="text" id="m-service-name" placeholder="e.g. Engine Oil or NH24 Toll" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200" />
           </div>
           <div>
             <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Cost (₹)</label>
@@ -793,6 +921,7 @@
       </div>
       <form id="edit-journey-form" onsubmit="saveEditedJourney(event)" class="space-y-3">
         <input type="hidden" id="edit-journey-id" />
+        <input type="hidden" id="edit-journey-rowindex" />
         <div>
           <label class="block text-[10px] font-orbitron uppercase text-slate-400 mb-1">Vehicle</label>
           <select id="edit-journey-vehicle" class="w-full bg-[#06101c] border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-300 font-semibold"></select>
@@ -828,7 +957,6 @@
         <div>
           <label class="block text-[10px] font-orbitron uppercase text-amber-400 mb-1 flex items-center justify-between">
             <span>Distance (KM) *</span>
-            <span id="edit-calc-status" class="text-[9px] text-slate-400">Manual or Odo</span>
           </label>
           <input type="number" step="0.1" id="edit-distance" required class="w-full bg-[#06101c] border border-amber-500/50 rounded-lg px-3 py-2 text-xs text-amber-300 font-bold" />
         </div>
@@ -853,33 +981,30 @@
   <!-- JAVASCRIPT APPLICATION CORE -->
   <script>
     const DEFAULT_WALLPAPER = "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=80";
-    let activeWallpaper = localStorage.getItem('akash_custom_wallpaper_v4') || DEFAULT_WALLPAPER;
+    let activeWallpaper = localStorage.getItem('akash_custom_wallpaper_v5') || DEFAULT_WALLPAPER;
     let webhookUrl = localStorage.getItem('akash_sheets_webhook_url') || '';
+    let reminderEmail = localStorage.getItem('akash_reminder_email_v5') || 'akashgkbt@gmail.com';
 
     let map = null;
     let mapLayersGroup = null;
-    let fetchedRoutesData = [];
-    let selectedRouteIndex = 0;
-    let journeys = JSON.parse(localStorage.getItem('akash_drive_journeys_v4')) || [];
-    let fuelEntries = JSON.parse(localStorage.getItem('akash_drive_fuel_v4')) || [];
-    let maintEntries = JSON.parse(localStorage.getItem('akash_drive_maint_v4')) || [];
+    let journeys = JSON.parse(localStorage.getItem('akash_drive_journeys_v5')) || [];
+    let fuelEntries = JSON.parse(localStorage.getItem('akash_drive_fuel_v5')) || [];
+    let maintEntries = JSON.parse(localStorage.getItem('akash_drive_maint_v5')) || [];
+    let vaultDocs = JSON.parse(localStorage.getItem('akash_drive_vault_v5')) || [];
+    let generalDocs = JSON.parse(localStorage.getItem('akash_drive_general_vault_v5')) || [];
+    let tyreData = JSON.parse(localStorage.getItem('akash_drive_tyre_v5')) || {};
 
-    let vehicles = JSON.parse(localStorage.getItem('akash_drivelog_vehicles_fleet_v4')) || [
+    let vehicles = JSON.parse(localStorage.getItem('akash_drivelog_vehicles_fleet_v5')) || [
       { id: 'car', name: 'Car Mode', category: 'car', sublabel: '', icon: 'fa-car', interval: 10000, lastServiceOdo: 0 },
       { id: 'unicorn', name: 'Unicorn', category: 'bike', sublabel: '160cc', icon: 'fa-motorcycle', interval: 3000, lastServiceOdo: 0 },
       { id: 'activa', name: 'Activa', category: 'scooter', sublabel: '110cc', icon: 'fa-bicycle', interval: 2500, lastServiceOdo: 0 }
     ];
 
-    vehicles = vehicles.map(v => {
-      if (v.sublabel && v.sublabel.toLowerCase().includes('seltos')) {
-        return { ...v, sublabel: '' };
-      }
-      return v;
-    });
-    localStorage.setItem('akash_drivelog_vehicles_fleet_v4', JSON.stringify(vehicles));
-
     let currentVehicleId = 'car';
     let vehicleToDeletePending = null;
+    let fleetPieChartObj = null;
+    let monthlyBarChartObj = null;
+    let draggedDocId = null;
 
     function showAppToast(message, isError = false) {
       const toast = document.getElementById('toast-notify');
@@ -898,7 +1023,7 @@
       if (hero) {
         hero.style.backgroundImage = `radial-gradient(circle at center bottom, rgba(245, 158, 11, 0.28) 0%, rgba(3, 7, 18, 0.9) 65%, #030712 100%), url('${url}')`;
       }
-      try { localStorage.setItem('akash_custom_wallpaper_v4', url); } catch (e) {}
+      try { localStorage.setItem('akash_custom_wallpaper_v5', url); } catch (e) {}
     }
 
     function openWallpaperModal() { document.getElementById('wallpaper-modal').classList.remove('hidden'); }
@@ -928,11 +1053,26 @@
 
     function resetDefaultWallpaper() { applyWallpaper(DEFAULT_WALLPAPER); closeWallpaperModal(); showAppToast('Wallpaper reset'); }
 
+    function saveReminderEmail() {
+      const val = document.getElementById('custom-reminder-email').value.trim();
+      if (val) {
+        reminderEmail = val;
+        localStorage.setItem('akash_reminder_email_v5', reminderEmail);
+        document.getElementById('reminder-email-label').innerText = reminderEmail;
+        document.getElementById('nav-email-display').innerText = `NOTIFICATION: ${reminderEmail}`;
+        showAppToast(`Reminder email updated to ${reminderEmail}`);
+        if (webhookUrl) postToGoogleSheets('sync_reminder_email', { email: reminderEmail });
+      } else {
+        showAppToast('Enter a valid email', true);
+      }
+    }
+
     function goToDashboard() {
       document.getElementById('hero-section').classList.add('hidden');
       document.getElementById('dashboard-section').classList.remove('hidden');
       window.scrollTo(0, 0);
       setTimeout(initRouteMap, 200);
+      renderAnalyticsCharts();
     }
 
     function goToHero() {
@@ -942,19 +1082,22 @@
     }
 
     function switchTab(tab) {
-      const tabs = ['dashboard', 'fuel', 'reminders', 'calculator', 'history'];
+      const tabs = ['dashboard', 'fuel', 'reminders', 'vault', 'analytics', 'calculator', 'history'];
       tabs.forEach(t => {
         const btn = document.getElementById('nav-' + t);
         if (btn) {
-          btn.className = (t === tab) ? 'px-3 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase transition-all bg-amber-500 text-black shadow-md' : 'px-3 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all';
+          btn.className = (t === tab) ? 'px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase transition-all bg-amber-500 text-black shadow-md' : 'px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all';
         }
       });
       document.getElementById('tab-content-dashboard').classList.toggle('hidden', tab !== 'dashboard');
       document.getElementById('tab-content-fuel').classList.toggle('hidden', tab !== 'fuel');
       document.getElementById('tab-content-reminders').classList.toggle('hidden', tab !== 'reminders');
+      document.getElementById('tab-content-vault').classList.toggle('hidden', tab !== 'vault');
+      document.getElementById('tab-content-analytics').classList.toggle('hidden', tab !== 'analytics');
       document.getElementById('tab-content-calculator').classList.toggle('hidden', tab !== 'calculator');
       document.getElementById('tab-content-history').classList.toggle('hidden', tab !== 'history');
       if (tab === 'dashboard' && map) setTimeout(() => map.invalidateSize(), 200);
+      if (tab === 'analytics') renderAnalyticsCharts();
     }
 
     function renderVehicleButtons() {
@@ -962,12 +1105,14 @@
       const journeySelect = document.getElementById('journey-vehicle-select');
       const modalVehSelect = document.getElementById('modal-veh-select');
       const calcVehSelect = document.getElementById('calc-veh-select');
+      const docVehSelect = document.getElementById('doc-veh-select');
       const filterVehSelect = document.getElementById('filter-journey-vehicle');
 
       container.innerHTML = '';
       journeySelect.innerHTML = '';
       modalVehSelect.innerHTML = '';
       calcVehSelect.innerHTML = '';
+      if (docVehSelect) docVehSelect.innerHTML = '';
 
       if (filterVehSelect) {
         const savedVal = filterVehSelect.value || 'ALL';
@@ -997,6 +1142,7 @@
         journeySelect.add(new Option(v.name, v.id, false, isActive));
         modalVehSelect.add(new Option(v.name, v.id));
         calcVehSelect.add(new Option(v.name, v.id));
+        if (docVehSelect) docVehSelect.add(new Option(v.name, v.id));
       });
 
       const activeObj = vehicles.find(v => v.id === currentVehicleId) || vehicles[0];
@@ -1006,6 +1152,10 @@
     function changeVehicle(vId) { currentVehicleId = vId; renderVehicleButtons(); }
     function openAddVehicleModal() { document.getElementById('add-vehicle-modal').classList.remove('hidden'); }
     function closeAddVehicleModal() { document.getElementById('add-vehicle-modal').classList.add('hidden'); }
+    function openUploadDocModal() { document.getElementById('upload-doc-modal').classList.remove('hidden'); }
+    function closeUploadDocModal() { document.getElementById('upload-doc-modal').classList.add('hidden'); }
+    function openUploadGeneralDocModal() { document.getElementById('upload-general-doc-modal').classList.remove('hidden'); }
+    function closeUploadGeneralDocModal() { document.getElementById('upload-general-doc-modal').classList.add('hidden'); }
     function openManageVehiclesModal() { renderFleetManagerList(); document.getElementById('manage-vehicles-modal').classList.remove('hidden'); }
     function closeManageVehiclesModal() { document.getElementById('manage-vehicles-modal').classList.add('hidden'); }
 
@@ -1042,15 +1192,16 @@
 
     function closeConfirmDeleteModal() { document.getElementById('confirm-delete-modal').classList.add('hidden'); }
 
-    function executeVehicleDeletion(vehId, name) {
+    async function executeVehicleDeletion(vehId, name) {
       vehicles = vehicles.filter(item => item.id !== vehId);
-      localStorage.setItem('akash_drivelog_vehicles_fleet_v4', JSON.stringify(vehicles));
+      localStorage.setItem('akash_drivelog_vehicles_fleet_v5', JSON.stringify(vehicles));
       if (currentVehicleId === vehId) currentVehicleId = vehicles[0].id;
       closeConfirmDeleteModal();
       renderVehicleButtons();
       renderFleetManagerList();
       renderDashboardStats();
-      showAppToast(`${name} deleted!`);
+      if (webhookUrl) await postToGoogleSheets('sync_fleet', vehicles);
+      showAppToast(`${name} deleted & synced!`);
     }
 
     async function handleAddNewVehicle(e) {
@@ -1064,13 +1215,13 @@
 
       const newVeh = { id: 'veh_' + Date.now(), name, category, sublabel, icon, interval, lastServiceOdo: initialOdo };
       vehicles.push(newVeh);
-      localStorage.setItem('akash_drivelog_vehicles_fleet_v4', JSON.stringify(vehicles));
+      localStorage.setItem('akash_drivelog_vehicles_fleet_v5', JSON.stringify(vehicles));
       currentVehicleId = newVeh.id;
       renderVehicleButtons();
       renderDashboardStats();
       closeAddVehicleModal();
       if (webhookUrl) await postToGoogleSheets('new_vehicle', newVeh);
-      showAppToast(`Vehicle added!`);
+      showAppToast(`Vehicle ${name} added & synced!`);
     }
 
     function initRouteMap() {
@@ -1112,51 +1263,63 @@
       return null;
     }
 
-    async function calculateRouteOptionsFromMap() {
+    function addWaypointField() {
+      const container = document.getElementById('waypoints-container');
+      const div = document.createElement('div');
+      div.className = 'flex items-center gap-2';
+      div.innerHTML = `
+        <input type="text" placeholder="Stop / Waypoint" class="waypoint-input w-full bg-[#091524] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200" />
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-400 px-2 py-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+      `;
+      container.appendChild(div);
+    }
+
+    async function calculateMultiStopRoute() {
       const start = document.getElementById('start-place').value.trim();
       const dest = document.getElementById('destination').value.trim();
+      const waypointInputs = document.querySelectorAll('.waypoint-input');
+      const waypoints = Array.from(waypointInputs).map(i => i.value.trim()).filter(Boolean);
       const btn = document.getElementById('btn-calc-routes');
+
       if (!start || !dest) { showAppToast('Enter start and destination', true); return; }
       initRouteMap();
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Calculating...`;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Calculating Route & Tolls...`;
+
       try {
-        const [sGeo, dGeo] = await Promise.all([geocodePlace(start), geocodePlace(dest)]);
-        if (!sGeo || !dGeo) { showAppToast('Could not find places', true); return; }
-        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${sGeo.lon},${sGeo.lat};${dGeo.lon},${dGeo.lat}?overview=full&geometries=geojson&alternatives=3`);
+        let allPlaces = [start, ...waypoints, dest];
+        let coordsList = [];
+        for (let p of allPlaces) {
+          let geo = await geocodePlace(p);
+          if (geo) coordsList.push(`${geo.lon},${geo.lat}`);
+        }
+
+        if (coordsList.length < 2) { showAppToast('Could not geocode locations', true); return; }
+
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsList.join(';')}?overview=full&geometries=geojson`);
         const data = await res.json();
-        if (!data.routes) return;
-        fetchedRoutesData = data.routes;
+        if (!data.routes || data.routes.length === 0) return;
+
+        const r = data.routes[0];
+        const km = (r.distance / 1000).toFixed(1);
+        document.getElementById('direct-km').value = km;
+        document.getElementById('nav-btn-text').innerText = `NAVIGATE: ${km} KM`;
+
+        const estToll = Math.round(parseFloat(km) * 1.8);
         document.getElementById('route-options-container').classList.remove('hidden');
-        document.getElementById('route-count-badge').innerText = `${fetchedRoutesData.length} Options`;
-        const list = document.getElementById('route-options-list');
-        list.innerHTML = '';
-        fetchedRoutesData.forEach((r, idx) => {
-          const km = (r.distance / 1000).toFixed(1);
-          const item = document.createElement('div');
-          item.className = 'p-2 rounded bg-[#040b15] border border-slate-800 text-xs flex justify-between cursor-pointer';
-          item.onclick = () => selectRouteOption(idx);
-          item.innerHTML = `<span>Route ${idx + 1}</span><span class="text-amber-400 font-bold">${km} KM</span>`;
-          list.appendChild(item);
-        });
-        selectRouteOption(0);
+        document.getElementById('toll-est-badge').innerText = `Total: ${km} KM • ~₹${estToll} Toll`;
+
+        if (mapLayersGroup) {
+          mapLayersGroup.clearLayers();
+          const coords = r.geometry.coordinates.map(c => [c[1], c[0]]);
+          L.polyline(coords, { color: '#06b6d4', weight: 5 }).addTo(mapLayersGroup);
+          map.fitBounds(L.polyline(coords).getBounds(), { padding: [40, 40] });
+        }
+        showAppToast(`Route calculated: ${km} KM`);
       } catch (e) {
         showAppToast('Route calculation failed', true);
       } finally {
-        btn.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-cyan-400"></i><span>Calculate Routes & Options</span>`;
+        btn.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-cyan-400"></i><span>Calculate Multi-Stop & Tolls</span>`;
       }
-    }
-
-    function selectRouteOption(idx) {
-      selectedRouteIndex = idx;
-      const r = fetchedRoutesData[idx];
-      const km = (r.distance / 1000).toFixed(1);
-      document.getElementById('direct-km').value = km;
-      document.getElementById('nav-btn-text').innerText = `NAVIGATE: ${km} KM`;
-      if (!mapLayersGroup) return;
-      mapLayersGroup.clearLayers();
-      const coords = r.geometry.coordinates.map(c => [c[1], c[0]]);
-      L.polyline(coords, { color: '#06b6d4', weight: 5 }).addTo(mapLayersGroup);
-      map.fitBounds(L.polyline(coords).getBounds(), { padding: [40, 40] });
     }
 
     function calculateKmDifference() {
@@ -1183,13 +1346,13 @@
         notes: document.getElementById('notes').value.trim()
       };
       journeys.unshift(entry);
-      localStorage.setItem('akash_drive_journeys_v4', JSON.stringify(journeys));
+      localStorage.setItem('akash_drive_journeys_v5', JSON.stringify(journeys));
       document.getElementById('journey-form').reset();
       document.getElementById('journey-date').value = new Date().toISOString().split('T')[0];
       document.getElementById('route-options-container').classList.add('hidden');
       renderDashboardStats();
       if (webhookUrl) await postToGoogleSheets('journey', entry);
-      showAppToast('Journey recorded!');
+      showAppToast('Journey recorded & synced!');
     }
 
     async function postToGoogleSheets(type, payload) {
@@ -1252,6 +1415,7 @@
       renderHistory();
       renderFuel();
       renderReminders();
+      renderDocumentVault();
     }
 
     function renderFuel() {
@@ -1274,6 +1438,10 @@
     }
 
     function renderReminders() {
+      document.getElementById('reminder-email-label').innerText = reminderEmail;
+      document.getElementById('nav-email-display').innerText = `NOTIFICATION: ${reminderEmail}`;
+      document.getElementById('custom-reminder-email').value = reminderEmail;
+
       const container = document.getElementById('reminders-container');
       container.innerHTML = '';
       vehicles.forEach(v => {
@@ -1283,9 +1451,53 @@
         const rem = (v.interval || 5000) - kmSince;
         const card = document.createElement('div');
         card.className = 'p-5 rounded-2xl bg-[#091524] border border-slate-800 space-y-2';
-        card.innerHTML = `<div class="font-orbitron text-xs font-bold text-slate-200">${v.name}</div><div class="text-xl font-black ${rem <= 0 ? 'text-red-400' : 'text-emerald-400'}">${formatKm(Math.abs(rem))} KM</div><button onclick="markServiceDone('${v.id}')" class="text-cyan-400 text-xs font-bold">Mark Done</button>`;
+        card.innerHTML = `
+          <div class="font-orbitron text-xs font-bold text-slate-200">${v.name} Service Countdown</div>
+          <div class="text-xl font-black ${rem <= 0 ? 'text-red-400' : 'text-emerald-400'}">${formatKm(Math.abs(rem))} KM</div>
+          <div class="text-[10px] text-slate-400">Insurance & PUC: Active • Notifications sent to ${reminderEmail}</div>
+          <button onclick="markServiceDone('${v.id}')" class="text-cyan-400 text-xs font-bold">Mark Service Done</button>
+        `;
         container.appendChild(card);
       });
+
+      // Render Individual Vehicle Tyre Health & 15-Day Pressure Reminders
+      const tyreContainer = document.getElementById('tyre-health-container');
+      if (tyreContainer) {
+        tyreContainer.innerHTML = '';
+        vehicles.forEach(v => {
+          const lastCheckStr = tyreData[v.id];
+          const lastCheck = lastCheckStr ? new Date(lastCheckStr) : null;
+          const diffDays = lastCheck ? Math.floor((new Date() - lastCheck) / (1000 * 60 * 60 * 24)) : 999;
+          const isDue = diffDays >= 15 || !lastCheck;
+
+          const box = document.createElement('div');
+          box.className = 'p-4 rounded-xl bg-[#06101c] border border-slate-800 space-y-3';
+          box.innerHTML = `
+            <div class="flex justify-between items-center">
+              <span class="font-orbitron text-xs font-bold text-amber-400">${v.name}</span>
+              <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${isDue ? 'bg-red-500/20 text-red-300 border border-red-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'}">
+                ${isDue ? 'Refill Due' : `${15 - diffDays} days left`}
+              </span>
+            </div>
+            <div class="text-xs font-rajdhani text-slate-300">
+              <i class="fa-solid fa-gauge-high mr-1 text-cyan-400"></i> ${lastCheck ? `Last refilled ${diffDays} days ago` : 'No air refill logged yet'}
+            </div>
+            <button onclick="logSingleVehicleTyreCheck('${v.id}')" class="w-full py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 rounded text-cyan-300 text-[10px] font-orbitron font-bold uppercase">
+              Log Air Refill for ${v.name}
+            </button>
+          `;
+          tyreContainer.appendChild(box);
+        });
+      }
+    }
+
+    async function logSingleVehicleTyreCheck(vehId) {
+      tyreData[vehId] = new Date().toISOString();
+      localStorage.setItem('akash_drive_tyre_v5', JSON.stringify(tyreData));
+      renderReminders();
+      const v = vehicles.find(item => item.id === vehId);
+      if (webhookUrl) await postToGoogleSheets('sync_tyre', tyreData);
+      showAppToast(`Tyre air pressure refill logged for ${v ? v.name : 'Vehicle'}!`);
     }
 
     function markServiceDone(vehId) {
@@ -1294,9 +1506,222 @@
       let maxOdo = v.lastServiceOdo || 0;
       journeys.filter(j => j.vehicleId === v.id || j.vehicle === v.name).forEach(j => { if (j.endOdo && j.endOdo > maxOdo) maxOdo = j.endOdo; });
       v.lastServiceOdo = maxOdo;
-      localStorage.setItem('akash_drivelog_vehicles_fleet_v4', JSON.stringify(vehicles));
+      localStorage.setItem('akash_drivelog_vehicles_fleet_v5', JSON.stringify(vehicles));
       renderReminders();
       showAppToast(`Service completed for ${v.name}`);
+    }
+
+    async function handleDocumentUpload(e) {
+      e.preventDefault();
+      const vehId = document.getElementById('doc-veh-select').value;
+      const vObj = vehicles.find(v => v.id === vehId) || vehicles[0];
+      const doc = {
+        id: Date.now(),
+        vehicleId: vObj.id,
+        vehicleName: vObj.name,
+        type: document.getElementById('doc-type').value,
+        expiry: document.getElementById('doc-expiry').value || 'No Expiry',
+        url: document.getElementById('doc-gdrive-url').value.trim(),
+        notes: document.getElementById('doc-notes').value.trim()
+      };
+      vaultDocs.unshift(doc);
+      localStorage.setItem('akash_drive_vault_v5', JSON.stringify(vaultDocs));
+      closeUploadDocModal();
+      renderDocumentVault();
+      if (webhookUrl) await postToGoogleSheets('sync_vault', vaultDocs);
+      showAppToast('Vehicle document saved & synced to Cloud Vault!');
+    }
+
+    async function handleGeneralDocumentUpload(e) {
+      e.preventDefault();
+      const doc = {
+        id: Date.now(),
+        title: document.getElementById('gen-doc-title').value.trim(),
+        category: document.getElementById('gen-doc-category').value.trim() || 'General',
+        expiry: document.getElementById('gen-doc-expiry').value || 'No Expiry',
+        url: document.getElementById('gen-doc-url').value.trim(),
+        notes: document.getElementById('gen-doc-notes').value.trim()
+      };
+      generalDocs.unshift(doc);
+      localStorage.setItem('akash_drive_general_vault_v5', JSON.stringify(generalDocs));
+      closeUploadGeneralDocModal();
+      renderDocumentVault();
+      if (webhookUrl) await postToGoogleSheets('sync_general_vault', generalDocs);
+      showAppToast('General document saved & synced!');
+    }
+
+    function renderDocumentVault() {
+      const genGrid = document.getElementById('general-docs-grid');
+      if (genGrid) {
+        genGrid.innerHTML = '';
+        if (generalDocs.length === 0) {
+          genGrid.innerHTML = `<div class="col-span-3 text-xs font-rajdhani text-slate-500 italic py-2">No general documents uploaded yet. Drag cards here once added.</div>`;
+        } else {
+          generalDocs.forEach(d => {
+            const card = document.createElement('div');
+            card.className = 'draggable-card p-3.5 rounded-xl bg-[#06101c] border border-cyan-500/30 space-y-2';
+            card.draggable = true;
+            card.dataset.id = d.id;
+            card.dataset.type = 'general';
+
+            card.addEventListener('dragstart', (e) => {
+              draggedDocId = d.id;
+              card.classList.add('dragging');
+            });
+            card.addEventListener('dragend', (e) => {
+              card.classList.remove('dragging');
+              draggedDocId = null;
+            });
+            card.addEventListener('dragover', (e) => e.preventDefault());
+            card.addEventListener('drop', (e) => {
+              e.preventDefault();
+              if (!draggedDocId) return;
+              const fromIdx = generalDocs.findIndex(item => item.id === draggedDocId);
+              const toIdx = generalDocs.findIndex(item => item.id === d.id);
+              if (fromIdx !== -1 && toIdx !== -1) {
+                const moved = generalDocs.splice(fromIdx, 1)[0];
+                generalDocs.splice(toIdx, 0, moved);
+                localStorage.setItem('akash_drive_general_vault_v5', JSON.stringify(generalDocs));
+                renderDocumentVault();
+                if (webhookUrl) postToGoogleSheets('sync_general_vault', generalDocs);
+              }
+            });
+
+            card.innerHTML = `
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="font-orbitron text-xs font-bold text-slate-200"><i class="fa-solid fa-grip-vertical text-slate-600 mr-1.5 cursor-grab"></i>${d.title}</span>
+                  <div class="text-[9px] font-rajdhani text-cyan-400 uppercase">${d.category}</div>
+                </div>
+                <button onclick="deleteGeneralDoc(${d.id})" class="text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+              </div>
+              <div class="text-[10px] text-slate-400">Expiry: ${d.expiry}</div>
+              <div class="text-[10px] text-slate-400 truncate">${d.notes || 'No notes'}</div>
+              <a href="${d.url}" target="_blank" class="block w-full py-1.5 text-center bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 rounded text-cyan-300 text-[10px] font-orbitron font-bold uppercase">View Document ➔</a>
+            `;
+            genGrid.appendChild(card);
+          });
+        }
+      }
+
+      const container = document.getElementById('vault-docs-container');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      vehicles.forEach(v => {
+        const vDocs = vaultDocs.filter(d => d.vehicleId === v.id || d.vehicleName === v.name);
+        const section = document.createElement('div');
+        section.className = 'bg-[#091524] border border-[#132840] rounded-2xl p-5 shadow-xl space-y-4';
+        
+        let docsHtml = '';
+        if (vDocs.length === 0) {
+          docsHtml = `<div class="text-xs font-rajdhani text-slate-500 italic">No vehicle documents uploaded for ${v.name} yet.</div>`;
+        } else {
+          docsHtml = `<div class="grid grid-cols-1 md:grid-cols-3 gap-3">`;
+          vDocs.forEach(d => {
+            docsHtml += `
+              <div class="draggable-card p-3.5 rounded-xl bg-[#06101c] border border-amber-500/30 space-y-2" draggable="true" data-id="${d.id}"
+                ondragstart="draggedDocId=${d.id}" ondragover="event.preventDefault()" ondrop="handleDropDoc(event, '${v.id}', ${d.id})">
+                <div class="flex justify-between items-start">
+                  <span class="font-orbitron text-xs font-bold text-slate-200"><i class="fa-solid fa-grip-vertical text-slate-600 mr-1.5 cursor-grab"></i>${d.type}</span>
+                  <button onclick="deleteVaultDoc(${d.id})" class="text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                <div class="text-[10px] text-slate-400">Expiry: ${d.expiry}</div>
+                <div class="text-[10px] text-slate-400 truncate">${d.notes || 'No notes'}</div>
+                <a href="${d.url}" target="_blank" class="block w-full py-1.5 text-center bg-amber-950 hover:bg-amber-900 border border-amber-500/50 rounded text-amber-300 text-[10px] font-orbitron font-bold uppercase">View in Google Drive ➔</a>
+              </div>
+            `;
+          });
+          docsHtml += `</div>`;
+        }
+
+        section.innerHTML = `
+          <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+            <h3 class="font-orbitron text-xs font-bold uppercase text-amber-400 flex items-center gap-2">
+              <i class="fa-solid ${v.icon} text-cyan-400"></i> ${v.name} Document Vault (Drag to Reorder)
+            </h3>
+            <button onclick="openUploadDocModal(); document.getElementById('doc-veh-select').value='${v.id}';" class="px-3 py-1 rounded bg-amber-500/15 border border-amber-500/50 text-amber-400 text-xs font-bold">+ Upload</button>
+          </div>
+          ${docsHtml}
+        `;
+        container.appendChild(section);
+      });
+    }
+
+    function handleDropDoc(e, targetVehId, targetDocId) {
+      e.preventDefault();
+      if (!draggedDocId) return;
+      const fromIdx = vaultDocs.findIndex(item => item.id === draggedDocId);
+      const toIdx = vaultDocs.findIndex(item => item.id === targetDocId);
+      if (fromIdx !== -1 && toIdx !== -1) {
+        const moved = vaultDocs.splice(fromIdx, 1)[0];
+        moved.vehicleId = targetVehId;
+        const targetV = vehicles.find(v => v.id === targetVehId);
+        if (targetV) moved.vehicleName = targetV.name;
+        vaultDocs.splice(toIdx, 0, moved);
+        localStorage.setItem('akash_drive_vault_v5', JSON.stringify(vaultDocs));
+        renderDocumentVault();
+        if (webhookUrl) postToGoogleSheets('sync_vault', vaultDocs);
+      }
+      draggedDocId = null;
+    }
+
+    async function deleteVaultDoc(id) {
+      vaultDocs = vaultDocs.filter(d => d.id !== id);
+      localStorage.setItem('akash_drive_vault_v5', JSON.stringify(vaultDocs));
+      renderDocumentVault();
+      if (webhookUrl) await postToGoogleSheets('sync_vault', vaultDocs);
+      showAppToast('Document removed');
+    }
+
+    async function deleteGeneralDoc(id) {
+      generalDocs = generalDocs.filter(d => d.id !== id);
+      localStorage.setItem('akash_drive_general_vault_v5', JSON.stringify(generalDocs));
+      renderDocumentVault();
+      if (webhookUrl) await postToGoogleSheets('sync_general_vault', generalDocs);
+      showAppToast('General document removed');
+    }
+
+    function renderAnalyticsCharts() {
+      const carKm = journeys.filter(j => j.vehicle.toLowerCase().includes('car')).reduce((s, j) => s + (Number(j.distance)||0), 0);
+      const bikeKm = journeys.filter(j => j.vehicle.toLowerCase().includes('unicorn') || j.vehicle.toLowerCase().includes('bike')).reduce((s, j) => s + (Number(j.distance)||0), 0);
+      const scootKm = journeys.filter(j => j.vehicle.toLowerCase().includes('activa') || j.vehicle.toLowerCase().includes('scooter')).reduce((s, j) => s + (Number(j.distance)||0), 0);
+
+      const pieCtx = document.getElementById('fleetPieChart')?.getContext('2d');
+      if (pieCtx) {
+        if (fleetPieChartObj) fleetPieChartObj.destroy();
+        fleetPieChartObj = new Chart(pieCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Car', 'Unicorn', 'Activa'],
+            datasets: [{ data: [carKm || 1, bikeKm || 0, scootKm || 0], backgroundColor: ['#f59e0b', '#06b6d4', '#10b981'] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#cbd5e1', font: { family: 'Rajdhani', size: 12 } } } } }
+        });
+      }
+
+      let monthlyMap = {};
+      journeys.forEach(j => {
+        if (j.date) {
+          const m = j.date.substring(0, 7);
+          monthlyMap[m] = (monthlyMap[m] || 0) + (Number(j.distance) || 0);
+        }
+      });
+      const months = Object.keys(monthlyMap).sort();
+      const kmValues = months.map(m => monthlyMap[m]);
+
+      const barCtx = document.getElementById('monthlyBarChart')?.getContext('2d');
+      if (barCtx) {
+        if (monthlyBarChartObj) monthlyBarChartObj.destroy();
+        monthlyBarChartObj = new Chart(barCtx, {
+          type: 'bar',
+          data: {
+            labels: months.length > 0 ? months : ['Current Month'],
+            datasets: [{ label: 'KM Driven', data: kmValues.length > 0 ? kmValues : [0], backgroundColor: '#f59e0b' }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#cbd5e1' } }, y: { ticks: { color: '#cbd5e1' } } }, plugins: { legend: { labels: { color: '#cbd5e1', font: { family: 'Rajdhani', size: 12 } } } } }
+        });
+      }
     }
 
     function runMileageComputation() {
@@ -1335,7 +1760,7 @@
       if (badge) badge.innerText = `Filtered: ${filtered.length} Found • ${formatKm(totalKm)} KM`;
 
       if (filtered.length === 0) {
-        tb.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">No journeys found.</td></tr>`;
+        tb.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">No journeys found matching criteria.</td></tr>`;
         return;
       }
 
@@ -1394,6 +1819,7 @@
       sel.innerHTML = '';
       vehicles.forEach(v => sel.add(new Option(v.name, v.id, false, v.id === j.vehicleId || v.name.toLowerCase() === j.vehicle.toLowerCase())));
       document.getElementById('edit-journey-id').value = j.id;
+      document.getElementById('edit-journey-rowindex').value = j.rowIndex || '';
       document.getElementById('edit-journey-date').value = j.date || '';
       document.getElementById('edit-start-place').value = j.startPlace || '';
       document.getElementById('edit-destination').value = j.destination || '';
@@ -1401,6 +1827,7 @@
       document.getElementById('edit-start-odo').value = j.startOdo ?? '';
       document.getElementById('edit-end-odo').value = j.endOdo ?? '';
       document.getElementById('edit-distance').value = j.distance || '';
+      document.getElementById('edit-notes').value = j.notes || '';
       document.getElementById('edit-journey-modal').classList.remove('hidden');
     }
 
@@ -1422,6 +1849,7 @@
 
       const updated = {
         ...old,
+        rowIndex: old.rowIndex,
         date: document.getElementById('edit-journey-date').value,
         vehicle: vObj.name,
         vehicleId: vObj.id,
@@ -1433,19 +1861,18 @@
         distance: parseFloat(document.getElementById('edit-distance').value) || 0,
         notes: document.getElementById('edit-notes').value.trim(),
         originalDate: old.date,
-        originalTripName: old.tripName,
-        originalStart: old.startPlace
+        originalTripName: old.tripName
       };
 
       journeys[idx] = updated;
-      localStorage.setItem('akash_drive_journeys_v4', JSON.stringify(journeys));
+      localStorage.setItem('akash_drive_journeys_v5', JSON.stringify(journeys));
       closeEditJourneyModal();
       renderDashboardStats();
 
       if (webhookUrl) {
         showAppToast('Updating Google Sheets...');
         await postToGoogleSheets('edit_journey', updated);
-        setTimeout(() => syncDataFromSheets(false), 1500);
+        setTimeout(() => syncDataFromSheets(false), 1200);
       }
       showAppToast('Journey updated successfully!');
     }
@@ -1453,7 +1880,7 @@
     async function removeJourney(id) {
       const toDel = journeys.find(j => j.id === id);
       journeys = journeys.filter(j => j.id !== id);
-      localStorage.setItem('akash_drive_journeys_v4', JSON.stringify(journeys));
+      localStorage.setItem('akash_drive_journeys_v5', JSON.stringify(journeys));
       renderDashboardStats();
       if (webhookUrl && toDel) {
         await postToGoogleSheets('delete_journey', toDel);
@@ -1462,8 +1889,8 @@
     }
 
     function wipeAllAppData() {
-      journeys = []; fuelEntries = []; maintEntries = [];
-      localStorage.removeItem('akash_drive_journeys_v4');
+      journeys = []; fuelEntries = []; maintEntries = []; vaultDocs = []; generalDocs = [];
+      localStorage.removeItem('akash_drive_journeys_v5');
       renderDashboardStats();
       showAppToast('All data wiped');
     }
@@ -1486,13 +1913,17 @@
         if (data && data.status === 'success') {
           if (Array.isArray(data.journeys)) {
             journeys = data.journeys;
-            localStorage.setItem('akash_drive_journeys_v4', JSON.stringify(journeys));
+            localStorage.setItem('akash_drive_journeys_v5', JSON.stringify(journeys));
           }
-          if (Array.isArray(data.fuel)) { fuelEntries = data.fuel; localStorage.setItem('akash_drive_fuel_v4', JSON.stringify(fuelEntries)); }
-          if (Array.isArray(data.maint)) { maintEntries = data.maint; localStorage.setItem('akash_drive_maint_v4', JSON.stringify(maintEntries)); }
+          if (Array.isArray(data.fuel)) { fuelEntries = data.fuel; localStorage.setItem('akash_drive_fuel_v5', JSON.stringify(fuelEntries)); }
+          if (Array.isArray(data.maint)) { maintEntries = data.maint; localStorage.setItem('akash_drive_maint_v5', JSON.stringify(maintEntries)); }
+          if (Array.isArray(data.vaultDocs)) { vaultDocs = data.vaultDocs; localStorage.setItem('akash_drive_vault_v5', JSON.stringify(vaultDocs)); }
+          if (Array.isArray(data.generalDocs)) { generalDocs = data.generalDocs; localStorage.setItem('akash_drive_general_vault_v5', JSON.stringify(generalDocs)); }
+          if (data.tyreData) { tyreData = data.tyreData; localStorage.setItem('akash_drive_tyre_v5', JSON.stringify(tyreData)); }
+          if (data.reminderEmail) { reminderEmail = data.reminderEmail; localStorage.setItem('akash_reminder_email_v5', reminderEmail); }
           if (Array.isArray(data.vehicles) && data.vehicles.length > 0) {
             vehicles = data.vehicles;
-            localStorage.setItem('akash_drivelog_vehicles_fleet_v4', JSON.stringify(vehicles));
+            localStorage.setItem('akash_drivelog_vehicles_fleet_v5', JSON.stringify(vehicles));
             renderVehicleButtons();
           }
           renderDashboardStats();
@@ -1511,7 +1942,7 @@
 
     function openLogModal(type) {
       document.getElementById('modal-type').value = type;
-      document.getElementById('modal-heading').innerText = type === 'fuel' ? 'Log Fuel' : 'Log Service';
+      document.getElementById('modal-heading').innerText = type === 'fuel' ? 'Log Fuel' : 'Log Service / Toll';
       document.getElementById('modal-fuel-section').classList.toggle('hidden', type !== 'fuel');
       document.getElementById('modal-service-section').classList.toggle('hidden', type !== 'maint');
       document.getElementById('modal-notes-section').classList.toggle('hidden', type !== 'maint');
@@ -1535,17 +1966,17 @@
       if (type === 'fuel') {
         const item = { id: Date.now(), date, vehicle: vObj.name, vehicleId: vObj.id, liters: parseFloat(document.getElementById('m-liters').value)||0, rate: parseFloat(document.getElementById('m-rate').value)||0, cost: parseFloat(document.getElementById('m-total-cost').value)||0, odo };
         fuelEntries.unshift(item);
-        localStorage.setItem('akash_drive_fuel_v4', JSON.stringify(fuelEntries));
+        localStorage.setItem('akash_drive_fuel_v5', JSON.stringify(fuelEntries));
         if (webhookUrl) await postToGoogleSheets('fuel', item);
       } else {
         const item = { id: Date.now(), date, vehicle: vObj.name, vehicleId: vObj.id, service: document.getElementById('m-service-name').value.trim(), cost: parseFloat(document.getElementById('m-service-cost').value)||0, odo, notes: document.getElementById('m-notes').value.trim() };
         maintEntries.unshift(item);
-        localStorage.setItem('akash_drive_maint_v4', JSON.stringify(maintEntries));
+        localStorage.setItem('akash_drive_maint_v5', JSON.stringify(maintEntries));
         if (webhookUrl) await postToGoogleSheets('maintenance', item);
       }
       closeLogModal();
       renderDashboardStats();
-      showAppToast('Log saved!');
+      showAppToast('Log saved & synced!');
     }
 
     function downloadCSV() {
