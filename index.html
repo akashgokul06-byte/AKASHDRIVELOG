@@ -1904,8 +1904,14 @@
           }
           if (Array.isArray(data.fuel)) { fuelEntries = data.fuel; localStorage.setItem('akash_drive_fuel_v5', JSON.stringify(fuelEntries)); }
           if (Array.isArray(data.maint)) { maintEntries = data.maint; localStorage.setItem('akash_drive_maint_v5', JSON.stringify(maintEntries)); }
-          if (Array.isArray(data.vaultDocs)) { vaultDocs = data.vaultDocs; localStorage.setItem('akash_drive_vault_v5', JSON.stringify(vaultDocs)); }
-          if (Array.isArray(data.generalDocs)) { generalDocs = data.generalDocs; localStorage.setItem('akash_drive_general_vault_v5', JSON.stringify(generalDocs)); }
+          if (Array.isArray(data.vaultDocs)) {
+            vaultDocs = data.vaultDocs;
+            localStorage.setItem('akash_drive_vault_v5', JSON.stringify(vaultDocs));
+          }
+          if (Array.isArray(data.generalDocs)) {
+            generalDocs = data.generalDocs;
+            localStorage.setItem('akash_drive_general_vault_v5', JSON.stringify(generalDocs));
+          }
           if (data.tyreData) { tyreData = data.tyreData; localStorage.setItem('akash_drive_tyre_v5', JSON.stringify(tyreData)); }
           if (data.reminderEmail) { reminderEmail = data.reminderEmail; localStorage.setItem('akash_reminder_email_v5', reminderEmail); }
           if (Array.isArray(data.vehicles) && data.vehicles.length > 0) {
