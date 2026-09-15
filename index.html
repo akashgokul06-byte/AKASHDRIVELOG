@@ -515,13 +515,43 @@
 
   <!-- CUSTOM WALLPAPER MODAL -->
   <div id="modal-wallpaper" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#091524] border border-[#132840] w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
-      <div class="flex justify-between items-center"><h3 class="font-orbitron text-base font-bold text-amber-400">Custom Hero Wallpaper</h3><button onclick="closeWallpaperModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div>
-      <p class="text-xs font-rajdhani text-slate-300">Paste an image URL to set as your stunning hero landing background.</p>
-      <input type="url" id="wallpaper-url-input" placeholder="https://images.unsplash.com/photo-..." class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:border-amber-500 outline-none" />
-      <div class="flex justify-end gap-3 pt-2">
-        <button onclick="closeWallpaperModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-orbitron font-bold">Cancel</button>
-        <button onclick="saveWallpaperUrl()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black rounded-xl text-xs font-orbitron font-bold">Apply Wallpaper</button>
+    <div class="bg-[#091524] border border-[#132840] w-full max-w-lg p-6 rounded-2xl shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-orbitron text-base font-bold text-amber-400">Custom Hero Wallpaper</h3>
+        <button onclick="closeWallpaperModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="bg-black/30 border border-[#132840] rounded-xl p-3">
+        <p class="text-xs font-rajdhani text-slate-200 font-bold">Use an image from almost any online source</p>
+        <p class="text-[11px] font-rajdhani text-slate-400 mt-1">Paste a direct image URL, an Unsplash/Pexels image URL, or a Google Drive sharing link.</p>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-rajdhani font-bold uppercase tracking-wider text-slate-400 mb-1.5">Image / Wallpaper Link</label>
+        <input type="url" id="wallpaper-url-input" autocomplete="off" placeholder="https://... or Google Drive share link" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-3 text-xs text-slate-100 focus:border-amber-500 outline-none" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-[10px] font-rajdhani">
+        <button type="button" onclick="setWallpaperExample('https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1920&auto=format&fit=crop')" class="px-3 py-2 rounded-lg border border-[#132840] text-slate-300 hover:border-amber-500 hover:text-amber-300">USE ONLINE EXAMPLE</button>
+        <button type="button" onclick="document.getElementById('wallpaper-url-input').focus()" class="px-3 py-2 rounded-lg border border-[#132840] text-slate-300 hover:border-amber-500 hover:text-amber-300">PASTE DRIVE LINK</button>
+      </div>
+
+      <p class="text-[10px] leading-relaxed text-slate-500 font-rajdhani">
+        Google Drive images must be shared as <b class="text-slate-300">Anyone with the link → Viewer</b>. Regular website links need to point to the image itself (for example .jpg, .jpeg, .png, .webp, or a direct image CDN URL), not an ordinary webpage containing the image.
+      </p>
+
+      <div id="wallpaper-preview-wrap" class="hidden border border-[#132840] rounded-xl overflow-hidden bg-black">
+        <img id="wallpaper-preview" class="w-full h-40 object-cover" alt="Wallpaper preview" />
+      </div>
+
+      <div class="flex flex-wrap justify-between gap-2 pt-2">
+        <button onclick="resetWallpaper()" class="px-4 py-2 bg-red-950/50 border border-red-500/40 text-red-300 hover:text-white rounded-xl text-xs font-orbitron font-bold">
+          <i class="fa-solid fa-rotate-left mr-1"></i> Reset Default
+        </button>
+        <div class="flex gap-2 ml-auto">
+          <button onclick="closeWallpaperModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-orbitron font-bold">Cancel</button>
+          <button onclick="saveWallpaperUrl()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black rounded-xl text-xs font-orbitron font-bold">Apply Wallpaper</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1969,6 +1999,12 @@
               generalDocs = data.generalDocs.map((d,i)=>({...d,id:d.id||`gdoc_${i}_${Date.now()}`}));
               localStorage.setItem('akash_general_docs', JSON.stringify(generalDocs));
             }
+            if(data.wallpaperUrl) {
+              customWallpaper = normalizeWallpaperUrl(data.wallpaperUrl) || DEFAULT_WALLPAPER;
+              localStorage.setItem('akash_wallpaper', customWallpaper);
+              const cloudHero = document.getElementById('hero-section');
+              if(cloudHero) cloudHero.style.backgroundImage = `url("${customWallpaper.replace(/"/g, '\\"')}")`;
+            }
             if(data.reminderEmail) {
               reminderEmail = data.reminderEmail;
               localStorage.setItem('akash_reminder_email', reminderEmail);
@@ -1986,15 +2022,108 @@
     }
 
     // WALLPAPER
-    function openWallpaperModal() { document.getElementById('modal-wallpaper').classList.remove('hidden'); }
-    function closeWallpaperModal() { document.getElementById('modal-wallpaper').classList.add('hidden'); }
-    function saveWallpaperUrl() {
-      customWallpaper = document.getElementById('wallpaper-url-input').value.trim();
-      localStorage.setItem('akash_wallpaper', customWallpaper);
-      document.getElementById('hero-section').style.backgroundImage = `url('${customWallpaper}')`;
-      closeWallpaperModal();
-      alertCustom('Custom wallpaper applied!');
+    const DEFAULT_WALLPAPER = 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1920&auto=format&fit=crop';
+
+    function openWallpaperModal() {
+      const modal = document.getElementById('modal-wallpaper');
+      const input = document.getElementById('wallpaper-url-input');
+      if (modal) modal.classList.remove('hidden');
+      if (input) {
+        input.value = customWallpaper || '';
+        updateWallpaperPreview();
+      }
     }
+
+    function closeWallpaperModal() {
+      document.getElementById('modal-wallpaper').classList.add('hidden');
+    }
+
+    function setWallpaperExample(url) {
+      const input = document.getElementById('wallpaper-url-input');
+      if (input) {
+        input.value = url;
+        updateWallpaperPreview();
+      }
+    }
+
+    // Converts common Google Drive sharing links into a browser-friendly image URL.
+    // Normal direct image URLs are returned unchanged.
+    function normalizeWallpaperUrl(rawUrl) {
+      let url = String(rawUrl || '').trim();
+      if (!url) return '';
+
+      // Google Drive: /file/d/FILE_ID/view, /open?id=FILE_ID, /uc?id=FILE_ID, etc.
+      const driveMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*?&)?id=)([a-zA-Z0-9_-]+)/i);
+      if (driveMatch) {
+        return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveMatch[1]) + '&sz=s4000';
+      }
+
+      // If the user pasted only a Drive file ID.
+      if (/^[a-zA-Z0-9_-]{20,}$/.test(url)) {
+        return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(url) + '&sz=s4000';
+      }
+
+      return url;
+    }
+
+    function updateWallpaperPreview() {
+      const input = document.getElementById('wallpaper-url-input');
+      const wrap = document.getElementById('wallpaper-preview-wrap');
+      const img = document.getElementById('wallpaper-preview');
+      if (!input || !wrap || !img) return;
+      const url = normalizeWallpaperUrl(input.value);
+      if (!url) {
+        wrap.classList.add('hidden');
+        img.removeAttribute('src');
+        return;
+      }
+      img.onload = () => wrap.classList.remove('hidden');
+      img.onerror = () => wrap.classList.add('hidden');
+      img.src = url;
+    }
+
+    function saveWallpaperUrl() {
+      const raw = document.getElementById('wallpaper-url-input').value.trim();
+      if (!raw) {
+        alertCustom('Please paste an image link first.');
+        return;
+      }
+
+      const normalized = normalizeWallpaperUrl(raw);
+      const hero = document.getElementById('hero-section');
+      const testImage = new Image();
+      testImage.onload = function() {
+        customWallpaper = normalized;
+        localStorage.setItem('akash_wallpaper', customWallpaper);
+        hero.style.backgroundImage = `url("${customWallpaper.replace(/"/g, '\\"')}")`;
+        // Save the selected wallpaper in Google Sheets so every connected device uses the same one.
+        syncToSheets('sync_wallpaper', customWallpaper);
+        closeWallpaperModal();
+        alertCustom('Custom wallpaper applied and saved to Cloud!');
+      };
+      testImage.onerror = function() {
+        alertCustom('Wallpaper could not be loaded. Check the link or Drive sharing permission.');
+      };
+      testImage.src = normalized;
+    }
+
+    function resetWallpaper() {
+      customWallpaper = DEFAULT_WALLPAPER;
+      localStorage.setItem('akash_wallpaper', customWallpaper);
+      // Reset is also a cloud setting, so all connected devices return to the default.
+      syncToSheets('sync_wallpaper', DEFAULT_WALLPAPER);
+      const hero = document.getElementById('hero-section');
+      if (hero) hero.style.backgroundImage = `url("${DEFAULT_WALLPAPER}")`;
+      const input = document.getElementById('wallpaper-url-input');
+      if (input) input.value = DEFAULT_WALLPAPER;
+      updateWallpaperPreview();
+      closeWallpaperModal();
+      alertCustom('Default wallpaper restored!');
+    }
+
+    document.addEventListener('input', function(e) {
+      if (e.target && e.target.id === 'wallpaper-url-input') updateWallpaperPreview();
+    });
 
     function alertCustom(msg) {
       const box = document.createElement('div');
