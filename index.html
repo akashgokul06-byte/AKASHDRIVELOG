@@ -155,7 +155,7 @@
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 class="font-orbitron text-base font-bold text-amber-400 flex items-center gap-2"><i class="fa-solid fa-route"></i><span>OPTIONAL ROUTE PLANNER</span></h3>
-              <p class="text-xs font-rajdhani text-slate-400 mt-1">Route planning is optional. You can manually enter KM or use Start/End Odometer below without opening the map.</p>
+              <p class="text-xs font-rajdhani text-slate-400 mt-1">Use either method: MAP ROUTE or MANUAL ENTRY. You can use either one without the other.</p>
             </div>
             <label class="flex items-center gap-2 cursor-pointer bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs font-rajdhani font-bold text-cyan-300">
               <input type="checkbox" id="route-planner-toggle" onchange="toggleRoutePlanner()" class="w-4 h-4 accent-cyan-500" />
@@ -196,6 +196,10 @@
             <div class="sm:col-span-2"><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Trip / Route Name</label><input type="text" id="j-name" placeholder="e.g. Office Commute" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
             <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Place</label><input type="text" id="j-start" placeholder="e.g. Kadambathur" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
             <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Destination Place</label><input type="text" id="j-dest" placeholder="e.g. Chennai" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Via / Intermediate Stops <span class="text-cyan-400 normal-case">— automatically filled from selected route</span></label>
+              <input type="text" id="j-via" placeholder="e.g. Vellavedu, Poonamallee" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-cyan-500 outline-none" />
+            </div>
             <div>
   <label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">
     Total Distance (KM)
@@ -217,7 +221,12 @@
             </div>
             <div class="sm:col-span-2 flex items-center justify-between gap-3 mt-2">
               <div id="journey-distance-status" class="text-xs font-rajdhani font-bold text-cyan-300">Distance ready for manual entry.</div>
-              <button type="submit" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-plus mr-1"></i> Save Journey</button>
+              <div class="flex flex-wrap gap-2 justify-end">
+                <button type="button" onclick="navigateCurrentJourney()" class="px-5 py-3 bg-cyan-500/15 hover:bg-cyan-500 hover:text-black border border-cyan-500/50 text-cyan-300 font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl transition-all">
+                  <i class="fa-solid fa-location-arrow mr-2"></i> Navigate
+                </button>
+                <button type="submit" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-plus mr-1"></i> Save Journey</button>
+              </div>
             </div>
           </form>
         </div>
@@ -306,7 +315,7 @@
           </div>
         </div>
 
-        <div id="per-vehicle-vaults-container" class="space-y-6"></div>
+        <div id="per-vehicle-vaults-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start"></div>
       </div>
 
       <!-- ANALYTICS TAB -->
@@ -418,6 +427,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Place</label><input type="text" id="edit-j-start" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
           <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Destination</label><input type="text" id="edit-j-dest" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
+          <div class="sm:col-span-2"><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Via / Intermediate Stops</label><input type="text" id="edit-j-via" placeholder="e.g. Vellavedu, Poonamallee" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
         </div>
         <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Distance (KM)</label><input type="number" step="0.1" id="edit-j-dist" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
         <div class="grid grid-cols-2 gap-3">
@@ -815,9 +825,14 @@
               <span>Via: ${r.via}</span>
               <span>Est. Cost: <strong class="text-emerald-400">₹${total.toFixed(0)}</strong> (Fuel: ₹${fuelCost.toFixed(0)} + Toll: ₹${toll})</span>
             </div>
-            <button onclick="selectAndApplyRoute('${from}', '${to}', ${r.distance}, '${r.name}')" class="w-full py-2 bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
-              <i class="fa-solid fa-circle-check mr-1"></i> Select Route & Auto-Apply KM (${r.distance} KM)
-            </button>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button onclick="selectAndApplyRoute('${from}', '${to}', ${r.distance}, '${r.name}')" class="w-full py-2 bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
+                <i class="fa-solid fa-circle-check mr-1"></i> Select Route & Auto-Apply KM (${r.distance} KM)
+              </button>
+              <button onclick="navigateToGoogleMaps('${from}', '${to}', calcStops)" class="w-full py-2 bg-cyan-500/15 hover:bg-cyan-500 hover:text-black border border-cyan-500/40 text-cyan-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
+                <i class="fa-solid fa-location-arrow mr-1"></i> Navigate
+              </button>
+            </div>
           </div>
         `;
       }).join('');
@@ -841,10 +856,37 @@
       }
     }
 
+    function navigateToGoogleMaps(from, to, via) {
+      const origin = String(from || '').trim();
+      const destination = String(to || '').trim();
+      const stops = Array.isArray(via)
+        ? via.map(s => String(s || '').trim()).filter(Boolean)
+        : [];
+
+      if(!origin || !destination) {
+        alertCustom('Please enter both Start Place and Destination Place first.');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.set('api', '1');
+      params.set('origin', origin);
+      params.set('destination', destination);
+      params.set('travelmode', 'driving');
+      if(stops.length) params.set('waypoints', stops.join('|'));
+
+      window.open(
+        'https://www.google.com/maps/dir/?' + params.toString(),
+        '_blank',
+        'noopener,noreferrer'
+      );
+    }
+
     function selectAndApplyRoute(from, to, distance, routeName) {
       document.getElementById('j-start').value = from.toUpperCase();
       document.getElementById('j-dest').value = to.toUpperCase();
       document.getElementById('j-name').value = routeName;
+      document.getElementById('j-via').value = calcStops.join(', ');
 
       // Apply the selected route distance directly into the Journey Form.
       // This is the same Total Distance field used for manual entry.
@@ -1010,6 +1052,16 @@
       return { baseDistance, distance: roundTrip ? baseDistance * 2 : baseDistance, roundTrip };
     }
 
+    function navigateCurrentJourney() {
+      const from = document.getElementById('j-start')?.value || '';
+      const to = document.getElementById('j-dest')?.value || '';
+      const via = (document.getElementById('j-via')?.value || '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+      navigateToGoogleMaps(from, to, via);
+    }
+
     function updateJourneyDistancePreview() {
       const result = getJourneyDistance();
       const status = document.getElementById('journey-distance-status');
@@ -1041,13 +1093,15 @@
         endOdo: document.getElementById('j-end-odo').value,
         roundTrip: calc.roundTrip,
         notes: '',
-        via: [...calcStops]
+        via: (document.getElementById('j-via').value || '').split(',').map(s => s.trim()).filter(Boolean)
       };
       journeys.unshift(newJ);
       localStorage.setItem('akash_journeys', JSON.stringify(journeys));
       syncToSheets('journey', newJ);
       e.target.reset();
       calcStops = [];
+      const viaField = document.getElementById('j-via');
+      if(viaField) viaField.value = '';
       initApp();
       alertCustom('Journey logged and synced successfully!');
     }
@@ -1317,7 +1371,7 @@
         <td class="py-3 px-4 text-slate-300">${j.date}</td><td class="py-3 px-4 text-amber-400 font-bold">${j.vehicle}</td><td class="py-3 px-4">${j.tripName||'-'}</td>
         <td class="py-3 px-4">${j.startPlace}${s.length?' → <span class="text-cyan-300">VIA '+s.join(' → ')+'</span> → ':' → '}${j.destination}</td>
         <td class="py-3 px-4 text-cyan-400 font-bold">${Number(j.distance||0).toFixed(1)} KM</td><td class="py-3 px-4 text-amber-300 font-bold">${j.roundTrip?'2x ROUND':'ONE WAY'}</td>
-        <td class="py-3 px-4 text-right whitespace-nowrap"><button onclick="openViewJourneyModal(${j.id})" title="View" class="mr-2 text-slate-400 hover:text-cyan-400"><i class="fa-solid fa-eye"></i></button><button onclick="openEditJourneyModal(${j.id})" title="Edit" class="mr-2 text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteJourney(${j.id},${j.rowIndex||-1})" title="Delete" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button></td>
+        <td class="py-3 px-4 text-right whitespace-nowrap"><button onclick="openViewJourneyModal(${j.id})" title="View" class="mr-2 text-slate-400 hover:text-cyan-400"><i class="fa-solid fa-eye"></i></button><button onclick="navigateToGoogleMaps(${JSON.stringify(j.startPlace || '')},${JSON.stringify(j.destination || '')},${JSON.stringify(s)})" title="Navigate to Google Maps" class="mr-2 text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-location-arrow"></i></button><button onclick="openEditJourneyModal(${j.id})" title="Edit" class="mr-2 text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteJourney(${j.id},${j.rowIndex||-1})" title="Delete" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button></td>
       </tr>`;}).join('');
     }
     function populateHistoryYearFilter(){
@@ -1361,6 +1415,7 @@
       document.getElementById('edit-j-name').value = j.tripName || '';
       document.getElementById('edit-j-start').value = j.startPlace || '';
       document.getElementById('edit-j-dest').value = j.destination || '';
+      document.getElementById('edit-j-via').value = (Array.isArray(j.stops) ? j.stops : (Array.isArray(j.via) ? j.via : [])).join(', ');
       document.getElementById('edit-j-dist').value = j.distance || '';
       document.getElementById('edit-j-start-odo').value = j.startOdo || '';
       document.getElementById('edit-j-end-odo').value = j.endOdo || '';
@@ -1379,6 +1434,8 @@
         journeys[idx].tripName = document.getElementById('edit-j-name').value;
         journeys[idx].startPlace = document.getElementById('edit-j-start').value.toUpperCase();
         journeys[idx].destination = document.getElementById('edit-j-dest').value.toUpperCase();
+        journeys[idx].via = document.getElementById('edit-j-via').value.split(',').map(s => s.trim()).filter(Boolean);
+        journeys[idx].stops = [...journeys[idx].via];
         journeys[idx].distance = Number(document.getElementById('edit-j-dist').value);
         journeys[idx].startOdo = document.getElementById('edit-j-start-odo').value;
         journeys[idx].endOdo = document.getElementById('edit-j-end-odo').value;
@@ -1433,15 +1490,15 @@
         .then(res => res.json())
         .then(data => {
           if(data.status === 'success') {
-            if(data.journeys && data.journeys.length > 0) {
+            if(Array.isArray(data.journeys)) {
               journeys = data.journeys;
               localStorage.setItem('akash_journeys', JSON.stringify(journeys));
             }
-            if(data.fuel && data.fuel.length > 0) {
+            if(Array.isArray(data.fuel)) {
               fuelLogs = data.fuel;
               localStorage.setItem('akash_fuel', JSON.stringify(fuelLogs));
             }
-            if(data.maint && data.maint.length > 0) {
+            if(Array.isArray(data.maint)) {
               maintLogs = data.maint;
               localStorage.setItem('akash_maint', JSON.stringify(maintLogs));
             }
