@@ -844,27 +844,72 @@
       return { lat: Number(data[0].lat), lon: Number(data[0].lon), display: data[0].display_name || q };
     }
 
+    async function computeOSRMLegAlternatives(fromCoord, toCoord) {
+      const coordString = `${fromCoord.lon},${fromCoord.lat};${toCoord.lon},${toCoord.lat}`;
+      const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?alternatives=3&overview=full&geometries=geojson&steps=false`;
+      const res = await fetch(url);
+      if(!res.ok) throw new Error(`OSRM routing failed (${res.status}).`);
+      const data = await res.json();
+      if(data.code !== 'Ok' || !Array.isArray(data.routes) || !data.routes.length) {
+        throw new Error('OSRM could not find a drivable route for these places.');
+      }
+      return data.routes;
+    }
+
+    function combineOSRMGeometries(legRoutes, routeIndex) {
+      let coordinates = [];
+      for(const leg of legRoutes) {
+        const route = leg[Math.min(routeIndex, leg.length - 1)];
+        const part = route?.geometry?.coordinates || [];
+        if(!part.length) continue;
+        coordinates = coordinates.length ? coordinates.concat(part.slice(1)) : part.slice();
+      }
+      return coordinates.length ? { type: 'LineString', coordinates } : null;
+    }
+
     async function computeOSRMDirect(from, to, stops) {
       const places = [from, ...(stops || []), to];
       const coords = [];
       for(const place of places) coords.push(await geocodePlaceDirect(place));
-      const coordString = coords.map(c => `${c.lon},${c.lat}`).join(';');
-      const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?alternatives=true&overview=full&geometries=geojson&steps=false`;
-      const res = await fetch(url);
-      if(!res.ok) throw new Error(`OSRM routing failed (${res.status}).`);
-      const data = await res.json();
-      if(data.code !== 'Ok' || !Array.isArray(data.routes) || !data.routes.length) throw new Error('OSRM could not find a drivable route for these places.');
-      return data.routes.map((r, idx) => ({
-        id: idx + 1,
-        name: idx === 0 ? 'Fastest / Recommended Route' : idx === 1 ? 'Alternative Route 2' : idx === 2 ? 'Alternative Route 3' : `Alternative Route ${idx + 1}`,
-        distance: Number(r.distance || 0) / 1000,
-        time: formatRouteDuration(r.duration),
-        via: (stops || []).length ? stops.join(' → ') : 'Direct route',
-        geometry: r.geometry || null,
-        durationSeconds: Number(r.duration || 0)
-      }));
-    }
 
+      // Calculate alternatives independently for each leg. This keeps every Via
+      // stop mandatory while still allowing up to 3 genuine OSRM road alternatives.
+      const legRoutes = [];
+      for(let i = 0; i < coords.length - 1; i++) {
+        legRoutes.push(await computeOSRMLegAlternatives(coords[i], coords[i + 1]));
+      }
+
+      let routeCount = 1;
+      legRoutes.forEach(leg => routeCount = Math.max(routeCount, Math.min(3, leg.length)));
+
+      const output = [];
+      for(let idx = 0; idx < Math.min(3, routeCount); idx++) {
+        let totalDistance = 0;
+        let totalSeconds = 0;
+        legRoutes.forEach(leg => {
+          const route = leg[Math.min(idx, leg.length - 1)];
+          totalDistance += Number(route.distance || 0);
+          totalSeconds += Number(route.duration || 0);
+        });
+
+        output.push({
+          id: idx + 1,
+          name: idx === 0 ? 'Fastest / Recommended Route' : idx === 1 ? 'Alternative Route 2' : 'Alternative Route 3',
+          distance: totalDistance / 1000,
+          time: formatRouteDuration(totalSeconds),
+          via: (stops || []).length ? stops.join(' → ') : 'Direct route',
+          geometry: combineOSRMGeometries(legRoutes, idx),
+          durationSeconds: totalSeconds
+        });
+      }
+
+      // Remove duplicate alternatives when the routing engine cannot find a
+      // meaningfully different path for one of the legs.
+      return output.filter((route, idx, arr) => arr.findIndex(r =>
+        Math.abs(Number(r.distance) - Number(route.distance)) < 0.01 &&
+        Math.abs(Number(r.durationSeconds) - Number(route.durationSeconds)) < 2
+      ) === idx);
+    }
     function formatRouteDuration(seconds) {
       const mins = Math.max(1, Math.round(Number(seconds || 0) / 60));
       const h = Math.floor(mins / 60);
@@ -1263,7 +1308,12 @@
       // Use direct navigation instead of window.open().
       // This avoids popup blockers and guarantees that the button redirects
       // to Google Maps from the user's click.
-      window.location.assign(mapsUrl);
+      // Same-tab navigation: Google Maps replaces the DriveLog page in this tab.
+      // Open Google Maps in a NEW TAB and keep DriveLog open in the current tab.
+      const mapsWindow = window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+      if(!mapsWindow) {
+        alertCustom('Google Maps could not be opened. Please allow pop-ups for this DriveLog page.');
+      }
     }
 
 
