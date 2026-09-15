@@ -15,6 +15,10 @@
   <!-- Chart.js for Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- Leaflet Map CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -62,7 +66,7 @@
     ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
     .draggable-card { cursor: grab; transition: transform 0.15s ease; }
     .draggable-card:active { cursor: grabbing; }
-    .dragging { opacity: 0.4; border: 2px dashed #f59e0b !important; }
+    #map, #dashboard-map, #calc-map { height: 320px; width: 100%; border-radius: 1rem; z-index: 10; }
   </style>
 </head>
 
@@ -120,7 +124,7 @@
         <button onclick="switchTab('reminders')" id="nav-reminders" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all"><i class="fa-solid fa-bell mr-1"></i> Reminders & Tyre</button>
         <button onclick="switchTab('vault')" id="nav-vault" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all"><i class="fa-solid fa-vault mr-1"></i> Doc Vault</button>
         <button onclick="switchTab('analytics')" id="nav-analytics" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all"><i class="fa-solid fa-chart-pie mr-1"></i> Analytics</button>
-        <button onclick="switchTab('calculator')" id="nav-calculator" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all"><i class="fa-solid fa-calculator mr-1"></i> Calc</button>
+        <button onclick="switchTab('calculator')" id="nav-calculator" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all"><i class="fa-solid fa-calculator mr-1"></i> Mileage Calc</button>
         <button onclick="switchTab('history')" id="nav-history" class="px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase text-slate-300 hover:text-amber-400 transition-all"><i class="fa-solid fa-clock-rotate-left mr-1"></i> History</button>
       </div>
 
@@ -137,36 +141,84 @@
           <div class="flex items-center justify-between max-w-4xl mb-2">
             <div class="text-[11px] font-orbitron uppercase text-amber-400 font-bold">SELECT VEHICLE</div>
             <div class="flex items-center gap-2">
-              <button onclick="openManageVehiclesModal()" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs font-orbitron font-bold">MANAGE FLEET</button>
-              <button onclick="openAddVehicleModal()" class="px-3 py-1 rounded-lg bg-amber-500/15 border border-amber-500/50 text-amber-400 text-xs font-orbitron font-bold">+ ADD VEHICLE</button>
+              <button onclick="openManageVehiclesModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-orbitron font-bold transition-all"><i class="fa-solid fa-gears mr-1"></i> MANAGE FLEET</button>
+              <button onclick="openAddVehicleModal()" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/50 text-amber-400 text-xs font-orbitron font-bold transition-all"><i class="fa-solid fa-plus mr-1"></i> ADD VEHICLE</button>
             </div>
           </div>
           <div id="vehicle-buttons-container" class="flex flex-wrap gap-3 max-w-4xl"></div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-          <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-amber-400 text-sm mb-1"><i class="fa-solid fa-road"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Total KM</div><div id="stat-total-km" class="font-orbitron text-base font-black text-slate-100">0</div></div>
-          <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-amber-400 text-sm mb-1"><i class="fa-solid fa-car"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Car KM</div><div id="stat-car-km" class="font-orbitron text-base font-black text-slate-100">0</div></div>
-          <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-cyan-400 text-sm mb-1"><i class="fa-solid fa-motorcycle"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Unicorn KM</div><div id="stat-unicorn-km" class="font-orbitron text-base font-black text-slate-100">0</div></div>
-          <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-cyan-400 text-sm mb-1"><i class="fa-solid fa-bicycle"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Activa KM</div><div id="stat-activa-km" class="font-orbitron text-base font-black text-slate-100">0</div></div>
-          <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-amber-400 text-sm mb-1"><i class="fa-solid fa-check"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Trips</div><div id="stat-total-trips" class="font-orbitron text-base font-black text-slate-100">0</div></div>
-          <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-cyan-400 text-sm mb-1"><i class="fa-solid fa-calendar"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Today</div><div id="stat-today-km" class="font-orbitron text-base font-black text-slate-100">0</div></div>
-          <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-cyan-400 text-sm mb-1"><i class="fa-solid fa-calendar-week"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Month</div><div id="stat-month-km" class="font-orbitron text-base font-black text-slate-100">0</div></div>
-          <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-amber-400 text-sm mb-1"><i class="fa-solid fa-gas-pump"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Fuel Cost</div><div id="stat-fuel-cost" class="font-orbitron text-base font-black text-slate-100">₹0</div></div>
+        <div id="stat-cards-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3"></div>
+
+        <!-- HOME / OPTIONAL ROUTE PLANNER -->
+        <div class="bg-[#091524] border border-[#132840] p-5 sm:p-6 rounded-2xl shadow-xl space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="font-orbitron text-base font-bold text-amber-400 flex items-center gap-2"><i class="fa-solid fa-route"></i><span>OPTIONAL ROUTE PLANNER</span></h3>
+              <p class="text-xs font-rajdhani text-slate-400 mt-1">Route planning is optional. You can manually enter KM or use Start/End Odometer below without opening the map.</p>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs font-rajdhani font-bold text-cyan-300">
+              <input type="checkbox" id="route-planner-toggle" onchange="toggleRoutePlanner()" class="w-4 h-4 accent-cyan-500" />
+              <span>Optional: Find Route on Map</span>
+            </label>
+          </div>
+          <div id="optional-route-planner" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">From Place</label><input type="text" id="calc-from" value="Kadambathur" placeholder="e.g. Kadambathur" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
+                <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Destination Place</label><input type="text" id="calc-to" value="Chennai" placeholder="e.g. Chennai" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
+              </div>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between"><label class="text-xs font-rajdhani font-bold uppercase text-cyan-400">Intermediate Stops</label><button onclick="addStopInput()" class="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500 hover:text-black border border-cyan-500/50 text-cyan-300 rounded text-[10px] font-orbitron font-bold">+ Add Stop</button></div>
+                <div id="calc-stops-container" class="space-y-2"></div>
+              </div>
+              <button onclick="generateMultipleRoutes()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-compass mr-1"></i> Compute Available Routes</button>
+              <div id="multi-route-options" class="space-y-3 pt-2"></div>
+            </div>
+            <div class="bg-[#06101c] border border-[#132840] p-4 rounded-2xl space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-orbitron text-sm font-bold text-cyan-400"><i class="fa-solid fa-map-location-dot mr-1"></i> LIVE MAP</h3>
+                <span id="map-status-badge" class="px-2.5 py-1 bg-cyan-500/20 text-cyan-300 text-[10px] font-rajdhani font-bold rounded">Ready</span>
+              </div>
+              <div id="dashboard-map"></div>
+              <p id="selected-route-status" class="text-xs font-rajdhani text-amber-300 font-bold">Enable the route planner to use the optional map.</p>
+            </div>
+          </div>
         </div>
 
+        <!-- LOG JOURNEY FORM -->
         <div class="bg-[#091524] border border-[#132840] p-5 sm:p-6 rounded-2xl shadow-xl">
-          <h3 class="font-orbitron text-base font-bold text-amber-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-gauge-high"></i><span>LOG NEW JOURNEY</span></h3>
-          <form onsubmit="handleJourneySubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <h3 class="font-orbitron text-base font-bold text-amber-400 mb-2 flex items-center gap-2"><i class="fa-solid fa-gauge-high"></i><span>LOG NEW JOURNEY</span></h3>
+          <p class="text-xs font-rajdhani text-slate-400 mb-4">Enter Total Distance directly, or leave it blank and provide both Start and End Odometer readings. No map is required.</p>
+          <form onsubmit="handleJourneySubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Date</label><input type="date" id="j-date" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
             <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Vehicle Mode</label><select id="j-vehicle" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none"></select></div>
-            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Trip / Route Name</label><input type="text" id="j-name" placeholder="e.g. Office Commute" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
+            <div class="sm:col-span-2"><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Trip / Route Name</label><input type="text" id="j-name" placeholder="e.g. Office Commute" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
             <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Place</label><input type="text" id="j-start" placeholder="e.g. Kadambathur" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
             <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Destination Place</label><input type="text" id="j-dest" placeholder="e.g. Chennai" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
-            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Total Distance (KM)</label><input type="number" step="0.1" id="j-dist" placeholder="e.g. 45.5" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
-            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Odometer (Optional)</label><input type="number" id="j-start-odo" placeholder="e.g. 12450" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
-            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">End Odometer (Optional)</label><input type="number" id="j-end-odo" placeholder="e.g. 12495" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
-            <div class="sm:col-span-2 lg:col-span-3 flex justify-end gap-3 mt-2"><button type="submit" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-plus mr-1"></i> Save Journey</button></div>
+            <div>
+  <label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">
+    Total Distance (KM)
+    <span class="text-cyan-400 normal-case">— direct entry or selected route</span>
+  </label>
+  <input type="number" step="0.1" id="j-dist"
+    placeholder="e.g. 45.5 or select a route above"
+    title="Enter distance directly or select a route from the Optional Route Planner"
+    class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none"
+    oninput="updateJourneyDistancePreview()" />
+</div>
+            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Odometer (Optional)</label><input type="number" step="0.1" id="j-start-odo" placeholder="e.g. 12450" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" oninput="updateJourneyDistancePreview()" /></div>
+            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">End Odometer (Optional)</label><input type="number" step="0.1" id="j-end-odo" placeholder="e.g. 12495.5" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" oninput="updateJourneyDistancePreview()" /></div>
+            <div class="flex items-end">
+              <label class="flex items-center gap-2 cursor-pointer bg-[#06101c] border border-[#132840] rounded-xl p-3 text-xs font-rajdhani font-bold text-amber-300 w-full">
+                <input type="checkbox" id="j-round-trip" onchange="updateJourneyDistancePreview()" class="w-4 h-4 accent-amber-500" />
+                <span>Round Trip (2x KM)</span>
+              </label>
+            </div>
+            <div class="sm:col-span-2 flex items-center justify-between gap-3 mt-2">
+              <div id="journey-distance-status" class="text-xs font-rajdhani font-bold text-cyan-300">Distance ready for manual entry.</div>
+              <button type="submit" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-plus mr-1"></i> Save Journey</button>
+            </div>
           </form>
         </div>
       </div>
@@ -191,16 +243,19 @@
           </div>
 
           <div class="bg-[#091524] border border-[#132840] p-5 sm:p-6 rounded-2xl shadow-xl">
-            <h3 class="font-orbitron text-base font-bold text-cyan-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-wrench"></i><span>LOG MAINTENANCE / TOLL</span></h3>
+            <h3 class="font-orbitron text-base font-bold text-cyan-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-wrench"></i><span>LOG MAINTENANCE / SERVICE</span></h3>
             <form onsubmit="handleMaintSubmit(event)" class="space-y-4">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Date</label><input type="date" id="m-date" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
                 <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Vehicle</label><select id="m-vehicle" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none"></select></div>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Service / Item</label><input type="text" id="m-service" placeholder="e.g. Oil Change / Toll" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
                 <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Cost (₹)</label><input type="number" step="0.01" id="m-cost" placeholder="e.g. 1500" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
-                <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Odometer (KM)</label><input type="number" id="m-odo" placeholder="e.g. 12500" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Current Odometer (KM)</label><input type="number" id="m-odo" placeholder="e.g. 12500" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
+                <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Service Interval Reminder (KM)</label><input type="number" id="m-interval" placeholder="e.g. 5000 (Next service at +5000 KM)" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
               </div>
               <div class="flex justify-end pt-2"><button type="submit" class="px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all">Save Maintenance</button></div>
             </form>
@@ -212,16 +267,18 @@
       <div id="tab-content-reminders" class="hidden space-y-6">
         <div class="bg-[#091524] border border-[#132840] p-6 rounded-2xl shadow-xl max-w-2xl">
           <h3 class="font-orbitron text-base font-bold text-amber-400 mb-2 flex items-center gap-2"><i class="fa-solid fa-envelope"></i><span>REMINDER NOTIFICATION EMAIL SETTING</span></h3>
-          <p class="text-xs font-rajdhani text-slate-400 mb-4">Set the email address where tyre air pressure refill reminders and insurance expiry notifications will be routed.</p>
-          <div class="flex gap-3">
-            <input type="email" id="custom-reminder-email" value="akashgkbt@gmail.com" class="flex-1 bg-[#06101c] border border-[#132840] rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" />
+          <p class="text-xs font-rajdhani text-slate-400 mb-4">Set the email address where tyre air pressure refill reminders and service notifications will be routed.</p>
+          <div class="flex flex-wrap gap-3">
+            <input type="email" id="custom-reminder-email" value="akashgkbt@gmail.com" class="flex-1 min-w-[240px] bg-[#06101c] border border-[#132840] rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" />
             <button onclick="saveReminderEmailSetting()" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all">Save Email</button>
+            <button onclick="setupEmailReminders()" class="px-5 py-2.5 bg-cyan-500/15 hover:bg-cyan-500 hover:text-black border border-cyan-500/50 text-cyan-300 font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl transition-all"><i class="fa-solid fa-clock mr-1"></i> Enable Daily Email Reminders</button>
           </div>
+          <p class="text-[10px] font-rajdhani text-slate-500 mt-3">Daily reminders cover tyre refill due dates and RC / Insurance / PUCC expiry dates.</p>
         </div>
 
         <div class="bg-[#091524] border border-[#132840] p-6 rounded-2xl shadow-xl">
           <h3 class="font-orbitron text-base font-bold text-cyan-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-gauge"></i><span>PER-VEHICLE TYRE AIR PRESSURE REFILL (15-DAY REMINDER)</span></h3>
-          <p class="text-xs font-rajdhani text-slate-400 mb-6">Each vehicle maintains an independent 15-day countdown timer for tyre air pressure checks. Select the exact refill date and click log.</p>
+          <p class="text-xs font-rajdhani text-slate-400 mb-6">Each vehicle maintains an independent 15-day countdown timer for tyre air pressure checks. Pick the exact refill date (past or today) and click log.</p>
           <div id="tyre-reminders-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
       </div>
@@ -231,7 +288,7 @@
         <div class="flex flex-wrap items-center justify-between gap-4 bg-[#091524] border border-[#132840] p-5 rounded-2xl shadow-xl">
           <div>
             <h3 class="font-orbitron text-lg font-black text-amber-400 flex items-center gap-2"><i class="fa-solid fa-vault"></i><span>CLOUD DOCUMENT VAULT</span></h3>
-            <p class="text-xs font-rajdhani text-slate-400 mt-1">Store RC, Insurance, License, and General Documents. Drag and drop cards to rearrange order within vaults.</p>
+            <p class="text-xs font-rajdhani text-slate-400 mt-1">Store RC, Insurance, License, and General Documents. Drag and drop cards to rearrange order or edit anytime.</p>
           </div>
           <div class="flex gap-3">
             <button onclick="openUploadModal('vehicle')" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-plus mr-1"></i> Vehicle Doc</button>
@@ -239,7 +296,6 @@
           </div>
         </div>
 
-        <!-- GENERAL DOCS VAULT -->
         <div class="bg-[#091524] border border-[#132840] p-5 rounded-2xl shadow-xl">
           <div class="flex justify-between items-center mb-4">
             <h4 class="font-orbitron text-sm font-bold text-cyan-400 flex items-center gap-2"><i class="fa-solid fa-folder-open"></i><span>GENERAL & OTHER DOCUMENTS (DRAG TO REARRANGE)</span></h4>
@@ -250,7 +306,6 @@
           </div>
         </div>
 
-        <!-- PER-VEHICLE DOC VAULTS -->
         <div id="per-vehicle-vaults-container" class="space-y-6"></div>
       </div>
 
@@ -262,18 +317,45 @@
         </div>
       </div>
 
-      <!-- CALCULATOR TAB -->
+      <!-- MILEAGE CALCULATOR TAB -->
       <div id="tab-content-calculator" class="hidden space-y-6">
-        <div class="bg-[#091524] border border-[#132840] p-6 rounded-2xl shadow-xl max-w-3xl">
-          <h3 class="font-orbitron text-base font-bold text-amber-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-route"></i><span>MULTI-STOP ROUTE PLANNER & TOLL CALCULATOR</span></h3>
-          <div class="space-y-4">
-            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Route / Stops (Comma separated)</label><input type="text" id="calc-stops" placeholder="e.g. Kadambathur, Tiruvallur, Poonamallee, Chennai" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-4 py-3 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Average Mileage (KM/L)</label><input type="number" step="0.1" id="calc-mileage" value="15" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
-              <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Fuel Price (₹ / Liter)</label><input type="number" step="0.1" id="calc-fuel-price" value="102.50" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
+        <div class="bg-[#091524] border border-[#132840] p-6 rounded-2xl shadow-xl">
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+            <div>
+              <h3 class="font-orbitron text-lg font-black text-amber-400 flex items-center gap-2"><i class="fa-solid fa-calculator"></i><span>MILEAGE CALCULATOR</span></h3>
+              <p class="text-xs font-rajdhani text-slate-400 mt-1">Calculate fuel cost and trip cost in real time. Save each calculation to its vehicle-specific history.</p>
             </div>
-            <button onclick="calculateRoutePlan()" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all">Calculate Route & Expenses</button>
-            <div id="calc-results" class="hidden mt-6 p-4 bg-[#06101c] border border-[#132840] rounded-xl space-y-2 text-sm font-rajdhani"></div>
+            <select id="calc-vehicle" onchange="calculateMileage()" class="bg-[#06101c] border border-[#132840] rounded-xl px-4 py-2.5 text-xs text-slate-100 outline-none min-w-[180px]"></select>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Distance (KM)</label><input type="number" step="0.1" id="mc-distance" placeholder="e.g. 125" oninput="calculateMileage()" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-3 text-sm text-slate-100 outline-none focus:border-amber-500" /></div>
+            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Mileage (KM/L)</label><input type="number" step="0.1" id="mc-mileage" value="15" oninput="calculateMileage()" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-3 text-sm text-slate-100 outline-none focus:border-amber-500" /></div>
+            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Fuel Price (₹/L)</label><input type="number" step="0.01" id="mc-fuel-price" value="102.50" oninput="calculateMileage()" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-3 text-sm text-slate-100 outline-none focus:border-amber-500" /></div>
+            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Tolls (₹)</label><input type="number" step="0.01" id="mc-tolls" value="0" oninput="calculateMileage()" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-3 text-sm text-slate-100 outline-none focus:border-amber-500" /></div>
+            <div class="flex items-end"><label class="flex items-center gap-2 cursor-pointer bg-[#06101c] border border-[#132840] rounded-xl p-3 text-xs font-rajdhani font-bold text-amber-300 w-full"><input type="checkbox" id="mc-round-trip" onchange="calculateMileage()" class="w-4 h-4 accent-amber-500" /><span>Round Trip (2x KM)</span></label></div>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+            <div class="bg-[#06101c] border border-[#132840] rounded-xl p-4"><div class="text-[10px] uppercase font-rajdhani text-slate-400">Billable Distance</div><div id="mc-out-distance" class="font-orbitron text-lg font-black text-cyan-400 mt-1">0.0 KM</div></div>
+            <div class="bg-[#06101c] border border-[#132840] rounded-xl p-4"><div class="text-[10px] uppercase font-rajdhani text-slate-400">Fuel Used</div><div id="mc-out-liters" class="font-orbitron text-lg font-black text-slate-100 mt-1">0.00 L</div></div>
+            <div class="bg-[#06101c] border border-[#132840] rounded-xl p-4"><div class="text-[10px] uppercase font-rajdhani text-slate-400">Fuel Cost</div><div id="mc-out-fuel" class="font-orbitron text-lg font-black text-amber-400 mt-1">₹0.00</div></div>
+            <div class="bg-[#06101c] border border-[#132840] rounded-xl p-4"><div class="text-[10px] uppercase font-rajdhani text-slate-400">Total Trip Cost</div><div id="mc-out-total" class="font-orbitron text-lg font-black text-emerald-400 mt-1">₹0.00</div></div>
+          </div>
+          <div class="flex justify-end gap-3 mt-5">
+            <button onclick="saveMileageCalculation()" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-floppy-disk mr-1"></i> Save Record to History</button>
+          </div>
+        </div>
+        <div class="bg-[#091524] border border-[#132840] p-6 rounded-2xl shadow-xl">
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <div><h4 class="font-orbitron text-sm font-bold text-cyan-400">PAST MILEAGE CALCULATIONS</h4><p class="text-[11px] font-rajdhani text-slate-500">Showing saved records for the selected vehicle.</p></div>
+            <select id="calc-history-vehicle" onchange="renderMileageHistory()" class="bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs text-slate-100 outline-none"></select>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm font-rajdhani">
+              <thead><tr class="border-b border-[#132840] text-slate-400 uppercase font-orbitron">
+                <th class="py-3 px-4">Date</th><th class="py-3 px-4">Vehicle</th><th class="py-3 px-4">Distance</th><th class="py-3 px-4">Mileage</th><th class="py-3 px-4">Fuel Price</th><th class="py-3 px-4">Tolls</th><th class="py-3 px-4">Fuel Cost</th><th class="py-3 px-4">Total</th>
+              </tr></thead>
+              <tbody id="mileage-history-body"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -283,8 +365,14 @@
         <div class="bg-[#091524] border border-[#132840] p-6 rounded-2xl shadow-xl">
           <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h3 class="font-orbitron text-base font-bold text-amber-400">TRIP LOG HISTORY</h3>
-            <div class="flex gap-3">
+            <div class="flex flex-wrap items-center gap-3">
               <select id="filter-vehicle" onchange="renderHistory()" class="bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs text-slate-100 outline-none"><option value="all">All Vehicles</option></select>
+              <select id="filter-year" onchange="renderHistory()" title="Year" class="bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs text-slate-100 outline-none"><option value="all">All Years</option></select>
+              <select id="filter-month" onchange="renderHistory()" title="Month" class="bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs text-slate-100 outline-none">
+                <option value="all">All Months</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
+              </select>
+              <input type="date" id="filter-date" onchange="renderHistory()" title="Exact date" class="bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs text-slate-100 outline-none" />
+              <button type="button" onclick="clearHistoryFilters()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-orbitron font-bold text-slate-300"><i class="fa-solid fa-filter-circle-xmark mr-1"></i> Clear</button>
             </div>
           </div>
           <div class="overflow-x-auto">
@@ -294,8 +382,9 @@
                   <th class="py-3 px-4">Date</th>
                   <th class="py-3 px-4">Vehicle</th>
                   <th class="py-3 px-4">Route Name</th>
-                  <th class="py-3 px-4">From → To</th>
+                  <th class="py-3 px-4">From → Via → To</th>
                   <th class="py-3 px-4">Distance</th>
+                  <th class="py-3 px-4">Trip</th>
                   <th class="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -330,7 +419,15 @@
           <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Place</label><input type="text" id="edit-j-start" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
           <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Destination</label><input type="text" id="edit-j-dest" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
         </div>
-        <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Distance (KM)</label><input type="number" step="0.1" id="edit-j-dist" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2 text-sm text-slate-100 outline-none" /></div>
+        <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Distance (KM)</label><input type="number" step="0.1" id="edit-j-dist" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Odometer</label><input type="number" step="0.1" id="edit-j-start-odo" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
+          <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">End Odometer</label><input type="number" step="0.1" id="edit-j-end-odo" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
+        </div>
+        <label class="flex items-center gap-2 bg-[#06101c] border border-[#132840] rounded-xl p-3 text-xs font-rajdhani font-bold text-amber-300">
+          <input type="checkbox" id="edit-j-round-trip" class="w-4 h-4 accent-amber-500" />
+          <span>Round Trip (2x KM)</span>
+        </label>
         <div class="flex justify-end gap-3 pt-2">
           <button type="button" onclick="closeEditJourneyModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-orbitron font-bold">Cancel</button>
           <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black rounded-xl text-xs font-orbitron font-bold">Update Journey</button>
@@ -352,7 +449,7 @@
     </div>
   </div>
 
-  <!-- ADD / MANAGE VEHICLE MODAL -->
+  <!-- ADD VEHICLE MODAL -->
   <div id="modal-vehicle" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-[#132840] w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
       <div class="flex justify-between items-center"><h3 id="vehicle-modal-title" class="font-orbitron text-base font-bold text-amber-400">Add New Vehicle</h3><button onclick="closeVehicleModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div>
@@ -360,12 +457,22 @@
         <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Vehicle Name</label><input type="text" id="v-name" placeholder="e.g. Tata Nexon / Honda CB" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
         <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Category Type</label><select id="v-cat" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none"><option value="car">Car / Four Wheeler</option><option value="bike">Bike / Motorcycle</option><option value="scooter">Scooter</option></select></div>
         <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Sublabel / Reg No</label><input type="text" id="v-sub" placeholder="e.g. TN-05-AB-1234" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
+        <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Service Interval Reminder (KM)</label><input type="number" id="v-interval" value="5000" placeholder="e.g. 5000" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
         <div class="flex justify-end gap-3 pt-2"><button type="submit" class="px-6 py-2.5 bg-amber-500 text-black font-orbitron font-bold text-xs uppercase rounded-xl">Save Vehicle</button></div>
       </form>
     </div>
   </div>
 
-  <!-- DOCUMENT UPLOAD MODAL -->
+  <!-- MANAGE FLEET MODAL -->
+  <div id="modal-manage-fleet" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#091524] border border-[#132840] w-full max-w-lg p-6 rounded-2xl shadow-2xl space-y-4">
+      <div class="flex justify-between items-center"><h3 class="font-orbitron text-base font-bold text-amber-400">Manage Fleet Vehicles</h3><button onclick="closeManageVehiclesModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+      <div id="fleet-list-container" class="space-y-3 max-h-[300px] overflow-y-auto"></div>
+      <div class="flex justify-end pt-2"><button onclick="closeManageVehiclesModal()" class="px-5 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-orbitron font-bold">Close</button></div>
+    </div>
+  </div>
+
+  <!-- DOCUMENT UPLOAD / EDIT MODAL -->
   <div id="modal-upload" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-[#132840] w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
       <div class="flex justify-between items-center"><h3 id="upload-modal-title" class="font-orbitron text-base font-bold text-amber-400">Upload Document</h3><button onclick="closeUploadModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div>
@@ -397,15 +504,15 @@
 
   <!-- APP LOGIC SCRIPT -->
   <script>
-    // State management
     let activeTab = 'dashboard';
     let currentVehicle = 'Car Mode';
     let journeys = JSON.parse(localStorage.getItem('akash_journeys')) || [
-      { id: 1789393841578, rowIndex: 2, date: '2026-09-12', vehicle: 'Car Mode', startPlace: 'KADAMBATHUR', destination: 'ADIGATHUR', tripName: 'BN CAR SERVICE', startOdo: '', endOdo: '', distance: 4.9, notes: '' },
-      { id: 1789393840578, rowIndex: 3, date: '2026-09-13', vehicle: 'Unicorn', startPlace: 'KADAMBATHUR', destination: 'RAKKI CINEMAS TRL', tripName: 'MANDAADI', startOdo: '', endOdo: '', distance: 26, notes: '' },
-      { id: 1789393839579, rowIndex: 4, date: '2026-09-06', vehicle: 'Car Mode', startPlace: 'KADAMBATHUR', destination: 'ERUKANCHERI', tripName: 'PRANAIYA FUCNTION', startOdo: '', endOdo: '', distance: 125, notes: '' }
+      { id: 1789393841578, rowIndex: 2, date: '2026-09-12', vehicle: 'Car Mode', startPlace: 'KADAMBATHUR', destination: 'ADIGATHUR', stops: [], tripName: 'BN CAR SERVICE', startOdo: '', endOdo: '', distance: 4.9, notes: '' },
+      { id: 1789393840578, rowIndex: 3, date: '2026-09-13', vehicle: 'Unicorn', startPlace: 'KADAMBATHUR', destination: 'RAKKI CINEMAS TRL', stops: [], tripName: 'MANDAADI', startOdo: '', endOdo: '', distance: 26, notes: '' },
+      { id: 1789393839579, rowIndex: 4, date: '2026-09-06', vehicle: 'Car Mode', startPlace: 'KADAMBATHUR', destination: 'ERUKANCHERI', stops: [], tripName: 'PRANAIYA FUCNTION', startOdo: '', endOdo: '', distance: 125, notes: '' }
     ];
     let fuelLogs = JSON.parse(localStorage.getItem('akash_fuel')) || [];
+    let mileageCalculations = JSON.parse(localStorage.getItem('akash_mileage_calculations')) || [];
     let maintLogs = JSON.parse(localStorage.getItem('akash_maint')) || [];
     let vehicles = JSON.parse(localStorage.getItem('akash_vehicles')) || [
       { id: 'car', name: 'Car Mode', category: 'car', sublabel: 'Primary Four Wheeler', icon: 'fa-car', interval: 5000 },
@@ -415,11 +522,17 @@
     let tyreData = JSON.parse(localStorage.getItem('akash_tyre_data')) || {};
     let vaultDocs = JSON.parse(localStorage.getItem('akash_vault_docs')) || [];
     let generalDocs = JSON.parse(localStorage.getItem('akash_general_docs')) || [];
+    vaultDocs = vaultDocs.map((d, i) => ({ ...d, id: d.id || `doc_${i}_${Date.now()}` }));
+    generalDocs = generalDocs.map((d, i) => ({ ...d, id: d.id || `gdoc_${i}_${Date.now()}` }));
     let reminderEmail = localStorage.getItem('akash_reminder_email') || 'akashgkbt@gmail.com';
     let sheetsWebhookUrl = localStorage.getItem('akash_sheets_url') || '';
     let customWallpaper = localStorage.getItem('akash_wallpaper') || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1920&auto=format&fit=crop';
+    
     let chartDistInstance = null;
     let chartMonthlyInstance = null;
+    let dashboardMapInstance = null;
+    let calcMapInstance = null;
+    let routePolylines = [];
 
     window.onload = function() {
       document.getElementById('hero-section').style.backgroundImage = `url('${customWallpaper}')`;
@@ -431,7 +544,30 @@
         syncDataFromSheets(false);
       }
       initApp();
+      initMaps();
     };
+
+    function initMaps() {
+      setTimeout(() => {
+        const plannerEnabled = document.getElementById('route-planner-toggle')?.checked;
+        if(!plannerEnabled) return;
+        const mapEl = document.getElementById('dashboard-map');
+        if(!mapEl) return;
+        if(!dashboardMapInstance) {
+          dashboardMapInstance = L.map('dashboard-map').setView([13.15, 79.91], 12);
+          // Use OpenStreetMap tiles so the map does not require a CARTO API key.
+          // CARTO's raster basemaps now show an "API KEY REQUIRED" watermark
+          // unless a CARTO key is supplied.
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+          }).addTo(dashboardMapInstance);
+          L.marker([13.15, 79.91]).addTo(dashboardMapInstance).bindPopup('<b>Kadambathur Hub</b>').openPopup();
+        } else {
+          dashboardMapInstance.invalidateSize();
+        }
+      }, 350);
+    }
 
     function initApp() {
       renderVehicleSelectors();
@@ -442,12 +578,19 @@
       renderVaults();
       renderHistory();
       renderAnalyticsCharts();
+      renderStopInputs();
+      const routeToggle = document.getElementById('route-planner-toggle');
+      if(routeToggle) routeToggle.checked = false;
+      const routePanel = document.getElementById('optional-route-planner');
+      if(routePanel) routePanel.classList.add('hidden');
+      renderMileageCalculator();
     }
 
     function goToDashboard() {
       document.getElementById('hero-section').classList.add('hidden');
       document.getElementById('dashboard-section').classList.remove('hidden');
       switchTab('dashboard');
+      initMaps();
     }
 
     function goToHero() {
@@ -471,6 +614,10 @@
         activeBtn.className = "px-2.5 py-1.5 rounded-lg text-xs font-rajdhani font-bold uppercase transition-all bg-amber-500 text-black shadow-md";
       }
       if(tabId === 'analytics') renderAnalyticsCharts();
+      if(tabId === 'dashboard' && document.getElementById('route-planner-toggle')?.checked) {
+        initMaps();
+      }
+      if(tabId === 'calculator') renderMileageCalculator();
     }
 
     function renderVehicleSelectors() {
@@ -487,15 +634,16 @@
     function selectVehicle(name) {
       currentVehicle = name;
       renderVehicleSelectors();
-      document.getElementById('j-vehicle').value = name;
+      const jVeh = document.getElementById('j-vehicle');
+      if(jVeh) jVeh.value = name;
     }
 
     function renderFuelMaintDropdowns() {
-      ['j-vehicle', 'f-vehicle', 'm-vehicle', 'filter-vehicle'].forEach(id => {
+      ['j-vehicle', 'f-vehicle', 'm-vehicle', 'filter-vehicle', 'calc-vehicle', 'calc-history-vehicle'].forEach(id => {
         const el = document.getElementById(id);
         if(!el) return;
         const currentVal = el.value;
-        let html = id === 'filter-vehicle' ? '<option value="all">All Vehicles</option>' : '';
+        let html = (id === 'filter-vehicle' || id === 'calc-history-vehicle') ? '<option value="all">All Vehicles</option>' : '';
         html += vehicles.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
         el.innerHTML = html;
         if(currentVal) el.value = currentVal;
@@ -504,25 +652,37 @@
 
     function renderStats() {
       const totalKm = journeys.reduce((sum, j) => sum + Number(j.distance || 0), 0);
-      const carKm = journeys.filter(j => j.vehicle === 'Car Mode' || j.vehicle.toLowerCase().includes('car')).reduce((sum, j) => sum + Number(j.distance || 0), 0);
-      const unicornKm = journeys.filter(j => j.vehicle.toLowerCase().includes('unicorn')).reduce((sum, j) => sum + Number(j.distance || 0), 0);
-      const activaKm = journeys.filter(j => j.vehicle.toLowerCase().includes('activa')).reduce((sum, j) => sum + Number(j.distance || 0), 0);
       const totalFuelCost = fuelLogs.reduce((sum, f) => sum + Number(f.cost || 0), 0);
 
-      document.getElementById('stat-total-km').innerText = totalKm.toFixed(1);
-      document.getElementById('stat-car-km').innerText = carKm.toFixed(1);
-      document.getElementById('stat-unicorn-km').innerText = unicornKm.toFixed(1);
-      document.getElementById('stat-activa-km').innerText = activaKm.toFixed(1);
-      document.getElementById('stat-total-trips').innerText = journeys.length;
-      document.getElementById('stat-today-km').innerText = journeys.filter(j => j.date === new Date().toISOString().split('T')[0]).reduce((sum, j) => sum + Number(j.distance || 0), 0).toFixed(1);
-      document.getElementById('stat-month-km').innerText = journeys.filter(j => j.date && j.date.startsWith(new Date().toISOString().slice(0, 7))).reduce((sum, j) => sum + Number(j.distance || 0), 0).toFixed(1);
-      document.getElementById('stat-fuel-cost').innerText = `₹${totalFuelCost.toFixed(0)}`;
+      let cardsHtml = `
+        <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-amber-400 text-sm mb-1"><i class="fa-solid fa-road"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Total KM</div><div class="font-orbitron text-base font-black text-slate-100">${totalKm.toFixed(1)}</div></div>
+      `;
+
+      vehicles.forEach(v => {
+        const vKm = journeys.filter(j => j.vehicle === v.name).reduce((sum, j) => sum + Number(j.distance || 0), 0);
+        cardsHtml += `
+          <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-cyan-400 text-sm mb-1"><i class="fa-solid ${v.icon}"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">${v.name} KM</div><div class="font-orbitron text-base font-black text-slate-100">${vKm.toFixed(1)}</div></div>
+        `;
+      });
+
+      cardsHtml += `
+        <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-amber-400 text-sm mb-1"><i class="fa-solid fa-check"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Trips</div><div class="font-orbitron text-base font-black text-slate-100">${journeys.length}</div></div>
+        <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-cyan-400 text-sm mb-1"><i class="fa-solid fa-calendar"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Today</div><div class="font-orbitron text-base font-black text-slate-100">${journeys.filter(j => j.date === new Date().toISOString().split('T')[0]).reduce((sum, j) => sum + Number(j.distance || 0), 0).toFixed(1)}</div></div>
+        <div class="bg-[#091524] border border-[#132840] p-3 rounded-xl"><div class="text-amber-400 text-sm mb-1"><i class="fa-solid fa-gas-pump"></i></div><div class="text-[10px] uppercase font-rajdhani text-slate-400">Fuel Cost</div><div class="font-orbitron text-base font-black text-slate-100">₹${totalFuelCost.toFixed(0)}</div></div>
+      `;
+
+      const statContainer = document.getElementById('stat-cards-container');
+      if(statContainer) statContainer.innerHTML = cardsHtml;
     }
 
     function renderDashboard() {
-      document.getElementById('j-date').value = new Date().toISOString().split('T')[0];
-      document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
-      document.getElementById('m-date').value = new Date().toISOString().split('T')[0];
+      const jDate = document.getElementById('j-date');
+      const fDate = document.getElementById('f-date');
+      const mDate = document.getElementById('m-date');
+      const todayStr = new Date().toISOString().split('T')[0];
+      if(jDate) jDate.value = todayStr;
+      if(fDate) fDate.value = todayStr;
+      if(mDate) mDate.value = todayStr;
     }
 
     function renderAnalyticsCharts() {
@@ -582,9 +742,292 @@
       });
     }
 
+    function toggleRoutePlanner() {
+      const enabled = document.getElementById('route-planner-toggle').checked;
+      const panel = document.getElementById('optional-route-planner');
+      if(panel) panel.classList.toggle('hidden', !enabled);
+      if(enabled) {
+        initMaps();
+        setTimeout(() => { if(dashboardMapInstance) dashboardMapInstance.invalidateSize(); }, 450);
+      }
+    }
+
+    // MULTI-STOP & LIVE ROUTE PLANNER ON HOME TAB
+    let calcStops = [];
+    function addStopInput() {
+      calcStops.push('');
+      renderStopInputs();
+    }
+    function removeStopInput(index) {
+      calcStops.splice(index, 1);
+      renderStopInputs();
+    }
+    function renderStopInputs() {
+      const container = document.getElementById('calc-stops-container');
+      if(!container) return;
+      container.innerHTML = calcStops.map((stopVal, idx) => `
+        <div class="flex gap-2 items-center">
+          <input type="text" value="${stopVal}" onchange="calcStops[${idx}]=this.value" placeholder="Stop ${idx + 1} Place e.g. Poonamallee" class="flex-1 bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs text-slate-100 outline-none" />
+          <button onclick="removeStopInput(${idx})" class="px-2.5 py-2 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-xl text-xs"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      `).join('');
+    }
+
+    function generateMultipleRoutes() {
+      const from = document.getElementById('calc-from')?.value.trim() || 'Kadambathur';
+      const to = document.getElementById('calc-to')?.value.trim() || 'Chennai';
+      // These controls belong to the Mileage Calculator tab, not the optional
+      // Home route planner. Keep safe defaults here so this button always works.
+      const mileage = Number(document.getElementById('calc-mileage')?.value) || 15;
+      const fuelPrice = Number(document.getElementById('calc-fuel-price')?.value) || 102.50;
+      const isRoundTrip = document.getElementById('calc-round-trip')?.checked || false;
+
+      const baseHash = (from + to + calcStops.join('')).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      let baseDist = 32 + (baseHash % 20) + (calcStops.length * 12);
+      if(isRoundTrip) baseDist *= 2;
+
+      const dist1 = baseDist;
+      const dist2 = baseDist + 7.5;
+      const dist3 = baseDist + 15.0;
+
+      const routes = [
+        { id: 1, name: `Direct Highway Route (${calcStops.length} Stops)`, distance: Number(dist1.toFixed(1)), time: isRoundTrip ? '1 hr 40 mins' : '50 mins', via: 'Expressway & Main Lanes' },
+        { id: 2, name: `Bypass & Ring Road Route`, distance: Number(dist2.toFixed(1)), time: isRoundTrip ? '2 hrs 05 mins' : '1 hr 05 mins', via: 'Ring Bypass & Link Roads' },
+        { id: 3, name: `Alternative State Highway`, distance: Number(dist3.toFixed(1)), time: isRoundTrip ? '2 hrs 30 mins' : '1 hr 20 mins', via: 'Connecting State Roads' }
+      ];
+
+      const container = document.getElementById('multi-route-options');
+      if (!container) {
+        alertCustom('Route results area is not available. Please reload the page.');
+        return;
+      }
+      container.innerHTML = routes.map(r => {
+        const fuelCost = (r.distance / mileage) * fuelPrice;
+        const toll = r.id === 1 ? 45 : (r.id === 2 ? 20 : 0);
+        const total = fuelCost + toll;
+        return `
+          <div class="bg-[#06101c] border border-[#132840] p-3.5 rounded-xl space-y-2 hover:border-amber-500/50 transition-all">
+            <div class="flex justify-between items-center">
+              <div class="font-orbitron text-xs font-bold text-amber-400">${r.name}</div>
+              <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-rajdhani font-bold">${r.distance} KM (${r.time})</span>
+            </div>
+            <div class="text-[11px] font-rajdhani text-slate-300 flex justify-between">
+              <span>Via: ${r.via}</span>
+              <span>Est. Cost: <strong class="text-emerald-400">₹${total.toFixed(0)}</strong> (Fuel: ₹${fuelCost.toFixed(0)} + Toll: ₹${toll})</span>
+            </div>
+            <button onclick="selectAndApplyRoute('${from}', '${to}', ${r.distance}, '${r.name}')" class="w-full py-2 bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
+              <i class="fa-solid fa-circle-check mr-1"></i> Select Route & Auto-Apply KM (${r.distance} KM)
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      if(document.getElementById('route-planner-toggle')?.checked) {
+        if(!dashboardMapInstance) initMaps();
+        setTimeout(() => {
+          if(!dashboardMapInstance) return;
+          routePolylines.forEach(p => dashboardMapInstance.removeLayer(p));
+          routePolylines = [];
+          const latOffset = (Math.random() - 0.5) * 0.04;
+          const latlngs1 = [[13.15, 79.91], [13.12 + latOffset, 79.98], [13.08, 80.27]];
+          const latlngs2 = [[13.15, 79.91], [13.19 + latOffset, 79.96], [13.08, 80.27]];
+          const p1 = L.polyline(latlngs1, {color: '#f59e0b', weight: 5}).addTo(dashboardMapInstance).bindPopup('Route 1: Direct Highway');
+          const p2 = L.polyline(latlngs2, {color: '#06b6d4', weight: 4, dashArray: '5, 5'}).addTo(dashboardMapInstance).bindPopup('Route 2: Bypass Route');
+          routePolylines.push(p1, p2);
+          dashboardMapInstance.fitBounds(p1.getBounds());
+          const badge = document.getElementById('map-status-badge');
+          if(badge) badge.innerText = 'Route Ready';
+        }, 350);
+      }
+    }
+
+    function selectAndApplyRoute(from, to, distance, routeName) {
+      document.getElementById('j-start').value = from.toUpperCase();
+      document.getElementById('j-dest').value = to.toUpperCase();
+      document.getElementById('j-name').value = routeName;
+
+      // Apply the selected route distance directly into the Journey Form.
+      // This is the same Total Distance field used for manual entry.
+      const distanceField = document.getElementById('j-dist');
+      distanceField.value = Number(distance).toFixed(1);
+
+      document.getElementById('j-start-odo').value = '';
+      document.getElementById('j-end-odo').value = '';
+      document.getElementById('j-round-trip').checked = false;
+      updateJourneyDistancePreview();
+
+      const status = document.getElementById('selected-route-status');
+      if(status) {
+        status.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Selected: <strong>${routeName} (${Number(distance).toFixed(1)} KM)</strong> — distance filled into <strong>Total Distance (KM)</strong> below.`;
+      }
+
+      // Bring the actual Total Distance field into view so the applied KM is visible.
+      distanceField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => {
+        distanceField.focus();
+        distanceField.select();
+      }, 450);
+
+      alertCustom(`Route selected! ${Number(distance).toFixed(1)} KM has been filled into Total Distance (KM).`);
+    }
+
+    // MILEAGE CALCULATOR
+    function renderMileageCalculator() {
+      renderFuelMaintDropdowns();
+      calculateMileage();
+      renderMileageHistory();
+    }
+
+    function calculateMileage() {
+      const distance = Number(document.getElementById('mc-distance')?.value) || 0;
+      const mileage = Number(document.getElementById('mc-mileage')?.value) || 0;
+      const fuelPrice = Number(document.getElementById('mc-fuel-price')?.value) || 0;
+      const tolls = Number(document.getElementById('mc-tolls')?.value) || 0;
+      const roundTrip = document.getElementById('mc-round-trip')?.checked || false;
+      const billableDistance = roundTrip ? distance * 2 : distance;
+      const liters = mileage > 0 ? billableDistance / mileage : 0;
+      const fuelCost = liters * fuelPrice;
+      const total = fuelCost + tolls;
+      const setText = (id, value) => { const el = document.getElementById(id); if(el) el.innerText = value; };
+      setText('mc-out-distance', `${billableDistance.toFixed(1)} KM`);
+      setText('mc-out-liters', `${liters.toFixed(2)} L`);
+      setText('mc-out-fuel', `₹${fuelCost.toFixed(2)}`);
+      setText('mc-out-total', `₹${total.toFixed(2)}`);
+      return { distance, billableDistance, mileage, fuelPrice, tolls, liters, fuelCost, total, roundTrip };
+    }
+
+    function saveMileageCalculation() {
+      const calc = calculateMileage();
+      if(calc.distance <= 0) { alertCustom('Enter a distance before saving the mileage calculation.'); return; }
+      if(calc.mileage <= 0) { alertCustom('Enter a valid mileage (KM/L).'); return; }
+      const record = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        vehicle: document.getElementById('calc-vehicle').value || currentVehicle,
+        distance: Number(calc.distance.toFixed(1)),
+        billableDistance: Number(calc.billableDistance.toFixed(1)),
+        mileage: Number(calc.mileage.toFixed(2)),
+        fuelPrice: Number(calc.fuelPrice.toFixed(2)),
+        tolls: Number(calc.tolls.toFixed(2)),
+        liters: Number(calc.liters.toFixed(2)),
+        fuelCost: Number(calc.fuelCost.toFixed(2)),
+        total: Number(calc.total.toFixed(2)),
+        roundTrip: calc.roundTrip
+      };
+      mileageCalculations.unshift(record);
+      localStorage.setItem('akash_mileage_calculations', JSON.stringify(mileageCalculations));
+      syncToSheets('mileage_calculation', record);
+      renderMileageHistory();
+      alertCustom('Mileage calculation saved to history and synced!');
+    }
+
+    function renderMileageHistory() {
+      const tbody = document.getElementById('mileage-history-body');
+      if(!tbody) return;
+      const filter = document.getElementById('calc-history-vehicle')?.value || 'all';
+      const filtered = mileageCalculations.filter(r => filter === 'all' || r.vehicle === filter);
+      if(filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="py-8 px-4 text-center text-slate-500 uppercase tracking-widest">No saved calculations for this filter.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = filtered.map(r => `
+        <tr class="border-b border-[#132840]/50 hover:bg-[#06101c]/50">
+          <td class="py-3 px-4 text-slate-300">${r.date || '-'}</td>
+          <td class="py-3 px-4 text-amber-400 font-bold">${r.vehicle || '-'}</td>
+          <td class="py-3 px-4 text-cyan-300 font-bold">${Number(r.billableDistance ?? r.distance ?? 0).toFixed(1)} KM${r.roundTrip ? ' <span class="text-amber-400">(2x)</span>' : ''}</td>
+          <td class="py-3 px-4 text-slate-100">${Number(r.mileage || 0).toFixed(1)} KM/L</td>
+          <td class="py-3 px-4 text-slate-300">₹${Number(r.fuelPrice || 0).toFixed(2)}</td>
+          <td class="py-3 px-4 text-slate-300">₹${Number(r.tolls || 0).toFixed(2)}</td>
+          <td class="py-3 px-4 text-amber-400">₹${Number(r.fuelCost || 0).toFixed(2)}</td>
+          <td class="py-3 px-4 text-emerald-400 font-bold">₹${Number(r.total || 0).toFixed(2)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // VEHICLE & FLEET MANAGEMENT
+    function openAddVehicleModal() {
+      document.getElementById('vehicle-modal-title').innerText = 'Add New Vehicle';
+      document.getElementById('v-name').value = '';
+      document.getElementById('v-sub').value = '';
+      document.getElementById('v-interval').value = '5000';
+      document.getElementById('modal-vehicle').classList.remove('hidden');
+    }
+    function closeVehicleModal() { document.getElementById('modal-vehicle').classList.add('hidden'); }
+    function handleSaveVehicle(e) {
+      e.preventDefault();
+      const name = document.getElementById('v-name').value.trim();
+      const cat = document.getElementById('v-cat').value;
+      const sub = document.getElementById('v-sub').value.trim();
+      const interval = Number(document.getElementById('v-interval').value) || 5000;
+      let icon = 'fa-car';
+      if(cat === 'bike') icon = 'fa-motorcycle';
+      if(cat === 'scooter') icon = 'fa-bicycle';
+
+      const newVeh = { id: name.toLowerCase().replace(/\s+/g, '_'), name, category: cat, sublabel: sub, icon, interval };
+      vehicles.push(newVeh);
+      localStorage.setItem('akash_vehicles', JSON.stringify(vehicles));
+      syncToSheets('new_vehicle', newVeh);
+      closeVehicleModal();
+      initApp();
+      alertCustom(`Vehicle ${name} added successfully!`);
+    }
+
+    function openManageVehiclesModal() {
+      const container = document.getElementById('fleet-list-container');
+      container.innerHTML = vehicles.map(v => `
+        <div class="flex items-center justify-between bg-[#06101c] p-3 rounded-xl border border-[#132840]">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid ${v.icon} text-amber-400 text-lg"></i>
+            <div>
+              <div class="font-orbitron text-sm font-bold text-slate-100">${v.name}</div>
+              <div class="text-[10px] font-rajdhani text-slate-400">Service Interval: ${v.interval} KM | ${v.sublabel || 'No Reg No'}</div>
+            </div>
+          </div>
+          <button onclick="deleteVehicle('${v.id}')" class="px-3 py-1 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-lg text-xs font-orbitron font-bold transition-all"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      `).join('');
+      document.getElementById('modal-manage-fleet').classList.remove('hidden');
+    }
+    function closeManageVehiclesModal() { document.getElementById('modal-manage-fleet').classList.add('hidden'); }
+    function deleteVehicle(id) {
+      if(confirm('Are you sure you want to delete this vehicle?')) {
+        vehicles = vehicles.filter(v => v.id !== id);
+        localStorage.setItem('akash_vehicles', JSON.stringify(vehicles));
+        syncToSheets('sync_fleet', vehicles);
+        closeManageVehiclesModal();
+        initApp();
+        alertCustom('Vehicle deleted successfully!');
+      }
+    }
+
     // JOURNEYS
+    function getJourneyDistance() {
+      const direct = Number(document.getElementById('j-dist').value);
+      const startOdo = Number(document.getElementById('j-start-odo').value);
+      const endOdo = Number(document.getElementById('j-end-odo').value);
+      let baseDistance = direct > 0 ? direct : ((endOdo > startOdo && startOdo >= 0) ? endOdo - startOdo : 0);
+      const roundTrip = document.getElementById('j-round-trip').checked;
+      return { baseDistance, distance: roundTrip ? baseDistance * 2 : baseDistance, roundTrip };
+    }
+
+    function updateJourneyDistancePreview() {
+      const result = getJourneyDistance();
+      const status = document.getElementById('journey-distance-status');
+      if(!status) return;
+      if(result.baseDistance <= 0) {
+        status.innerHTML = '<span class="text-amber-300">Enter Total KM, or both Start & End Odometer readings.</span>';
+        return;
+      }
+      status.innerHTML = `Calculated Distance: <strong class="text-cyan-300">${result.distance.toFixed(1)} KM</strong>${result.roundTrip ? ' <span class="text-amber-300">(Round Trip 2x)</span>' : ''}`;
+    }
+
     function handleJourneySubmit(e) {
       e.preventDefault();
+      const calc = getJourneyDistance();
+      if(calc.baseDistance <= 0) {
+        alertCustom('Please enter Total Distance, or valid Start and End Odometer readings.');
+        return;
+      }
       const newJ = {
         id: Date.now(),
         date: document.getElementById('j-date').value,
@@ -592,15 +1035,19 @@
         tripName: document.getElementById('j-name').value,
         startPlace: document.getElementById('j-start').value.toUpperCase(),
         destination: document.getElementById('j-dest').value.toUpperCase(),
-        distance: Number(document.getElementById('j-dist').value),
+        stops: [...calcStops],
+        distance: Number(calc.distance.toFixed(1)),
         startOdo: document.getElementById('j-start-odo').value,
         endOdo: document.getElementById('j-end-odo').value,
-        notes: ''
+        roundTrip: calc.roundTrip,
+        notes: '',
+        via: [...calcStops]
       };
       journeys.unshift(newJ);
       localStorage.setItem('akash_journeys', JSON.stringify(journeys));
       syncToSheets('journey', newJ);
       e.target.reset();
+      calcStops = [];
       initApp();
       alertCustom('Journey logged and synced successfully!');
     }
@@ -636,6 +1083,7 @@
         service: document.getElementById('m-service').value,
         cost: Number(document.getElementById('m-cost').value),
         odo: document.getElementById('m-odo').value,
+        interval: Number(document.getElementById('m-interval').value) || 5000,
         notes: ''
       };
       maintLogs.unshift(newM);
@@ -643,10 +1091,10 @@
       syncToSheets('maintenance', newM);
       e.target.reset();
       initApp();
-      alertCustom('Maintenance log saved successfully!');
+      alertCustom('Maintenance & service interval reminder saved successfully!');
     }
 
-    // REMINDERS & TYRE WITH DATE PICKER
+    // REMINDERS & TYRE
     function saveReminderEmailSetting() {
       reminderEmail = document.getElementById('custom-reminder-email').value;
       localStorage.setItem('akash_reminder_email', reminderEmail);
@@ -655,144 +1103,125 @@
       alertCustom(`Reminder email updated to ${reminderEmail}!`);
     }
 
+    function getTyreRecord(vehicleName) {
+      const raw = tyreData[vehicleName];
+      if(!raw) return { lastRefill: '', history: [] };
+      if(typeof raw === 'string') return { lastRefill: raw, history: [raw] };
+      return { lastRefill: raw.lastRefill || '', history: Array.isArray(raw.history) ? raw.history : [] };
+    }
+
+    function getDocumentExpiryInfo(vehicleId, words) {
+      const doc = vaultDocs.filter(d => d.vehicleId === vehicleId).find(d => {
+        const title = String(d.title || '').toLowerCase();
+        return words.some(w => title.includes(w));
+      });
+      if(!doc || !doc.expiry) return { label:'Not set', days:null, doc:null };
+      const today = new Date(); today.setHours(0,0,0,0);
+      return { label:doc.expiry, days:Math.ceil((new Date(`${doc.expiry}T00:00:00`) - today)/86400000), doc };
+    }
+
+    function expiryBadge(info) {
+      if(info.days === null) return '<span class="text-slate-500">Not set</span>';
+      if(info.days < 0) return `<span class="text-rose-400 font-bold">EXPIRED ${Math.abs(info.days)}d</span>`;
+      if(info.days === 0) return '<span class="text-rose-400 font-bold">TODAY</span>';
+      if(info.days <= 30) return `<span class="text-amber-300 font-bold">${info.label} (${info.days}d)</span>`;
+      return `<span class="text-emerald-300">${info.label} (${info.days}d)</span>`;
+    }
+
+    function setupEmailReminders() {
+      if(!sheetsWebhookUrl) { alertCustom('Link the Google Sheet Web App URL first.'); openSheetsModal(); return; }
+      fetch(`${sheetsWebhookUrl}?action=setup_reminders`).then(r=>r.json()).then(data=>{
+        alertCustom(data.status === 'success' ? 'Daily email reminders enabled.' : (data.message || 'Reminder setup failed.'));
+      }).catch(err=>{ console.error(err); alertCustom('Run setupDailyReminderTrigger() once in Apps Script if authorization is required.'); });
+    }
+
     function renderTyreReminders() {
       const container = document.getElementById('tyre-reminders-container');
       if(!container) return;
       const todayStr = new Date().toISOString().split('T')[0];
+
       container.innerHTML = vehicles.map(v => {
-        const lastRefillDateStr = tyreData[v.name] || '';
-        let statusText = 'Not Logged Yet';
-        let badgeColor = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
-        if(lastRefillDateStr) {
-          const lastDate = new Date(lastRefillDateStr);
-          const diffDays = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-          const daysLeft = Math.max(0, 15 - diffDays);
-          if(daysLeft === 0) {
-            statusText = 'REFILL DUE NOW!';
-            badgeColor = 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse';
-          } else {
-            statusText = `${daysLeft} Days until refill`;
-            badgeColor = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-          }
+        const rec = getTyreRecord(v.name);
+        const last = rec.lastRefill || '';
+        let status = 'Not Logged Yet', badge = 'bg-amber-500/15 text-amber-400 border-amber-500/30', next = 'Not calculated';
+        if(last) {
+          const d = new Date(`${last}T00:00:00`);
+          const n = new Date(d); n.setDate(n.getDate()+15); next = n.toISOString().split('T')[0];
+          const left = 15 - Math.floor((Date.now()-d.getTime())/86400000);
+          status = left <= 0 ? (left < 0 ? `OVERDUE ${Math.abs(left)}d` : 'REFILL DUE NOW!') : `${left} Days until refill`;
+          badge = left <= 0 ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse' : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
         }
-        return `
-          <div class="bg-[#06101c] border border-[#132840] p-4 rounded-xl space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2 font-orbitron text-sm font-bold text-slate-100"><i class="fa-solid ${v.icon} text-amber-400"></i><span>${v.name}</span></div>
-              <span class="px-2.5 py-1 rounded-full text-[10px] font-rajdhani font-bold border ${badgeColor}">${statusText}</span>
-            </div>
-            <div class="text-xs font-rajdhani text-slate-400">Target Email: <span class="text-amber-300 font-semibold">${reminderEmail}</span></div>
-            <div>
-              <label class="block text-[10px] font-rajdhani uppercase text-slate-400 mb-1">Refill Date (Select Past or Today):</label>
-              <input type="date" id="tyre-date-${v.id}" value="${lastRefillDateStr || todayStr}" class="w-full bg-[#040b15] border border-[#132840] rounded-lg px-3 py-1.5 text-xs text-slate-100 outline-none mb-2" />
-            </div>
-            <button onclick="logTyreRefill('${v.name}', '${v.id}')" class="w-full py-2 bg-amber-500/15 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-400 font-orbitron font-bold text-xs uppercase rounded-lg transition-all">Log Tyre Air Refill Done</button>
-          </div>
-        `;
+        const rc=getDocumentExpiryInfo(v.id,['rc book','rc']), ins=getDocumentExpiryInfo(v.id,['insurance']), puc=getDocumentExpiryInfo(v.id,['puc','pucc','puc certificate']);
+        return `<div class="bg-[#06101c] border border-[#132840] p-4 rounded-xl space-y-3">
+          <div class="flex justify-between items-center"><div class="font-orbitron text-sm font-bold text-slate-100"><i class="fa-solid ${v.icon} text-amber-400 mr-1"></i>${v.name}</div><span class="px-2 py-1 rounded-full text-[10px] font-bold border ${badge}">${status}</span></div>
+          <div class="grid gap-1 text-[11px] font-rajdhani"><div class="flex justify-between"><span>RC</span>${expiryBadge(rc)}</div><div class="flex justify-between"><span>Insurance</span>${expiryBadge(ins)}</div><div class="flex justify-between"><span>PUCC</span>${expiryBadge(puc)}</div></div>
+          <div class="text-[11px] text-slate-400">Last refill: <span class="text-slate-200">${last||'Not logged'}</span> | Next due: <span class="text-cyan-300">${next}</span></div>
+          <div class="text-xs text-slate-400">Email: <span class="text-amber-300">${reminderEmail}</span></div>
+          <input type="date" id="tyre-date-${v.id}" value="${last||todayStr}" class="w-full bg-[#040b15] border border-[#132840] rounded-lg px-3 py-1.5 text-xs text-slate-100 outline-none" />
+          <button onclick="logTyreRefill('${v.name}','${v.id}')" class="w-full py-2 bg-amber-500/15 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-400 font-orbitron font-bold text-xs uppercase rounded-lg">Log Tyre Air Refill Done</button>
+          <div class="text-[10px] text-slate-500">Refill records stored: ${rec.history.length}</div>
+        </div>`;
       }).join('');
     }
 
     function logTyreRefill(vehicleName, vehicleId) {
       const dateInput = document.getElementById(`tyre-date-${vehicleId}`).value;
-      if(!dateInput) {
-        alertCustom('Please select a valid date!');
-        return;
-      }
-      tyreData[vehicleName] = dateInput;
-      localStorage.setItem('akash_tyre_data', JSON.stringify(tyreData));
-      syncToSheets('sync_tyre', tyreData);
-      renderTyreReminders();
-      alertCustom(`Tyre air pressure refill logged for ${vehicleName} on ${dateInput}. 15-day timer reset!`);
+      if(!dateInput){ alertCustom('Please select a valid date!'); return; }
+      const rec=getTyreRecord(vehicleName);
+      if(!rec.history.includes(dateInput)) rec.history.push(dateInput);
+      rec.history.sort(); rec.lastRefill=dateInput; tyreData[vehicleName]=rec;
+      localStorage.setItem('akash_tyre_data',JSON.stringify(tyreData));
+      syncToSheets('sync_tyre',tyreData); renderTyreReminders();
+      alertCustom(`Tyre refill logged for ${vehicleName}. 15-day timer reset.`);
     }
 
-    // DOC VAULT & DRAG-AND-DROP
+    // VEHICLE-WISE DOCUMENT VAULT
     function renderVaults() {
-      const genContainer = document.getElementById('general-docs-container');
-      if(generalDocs.length === 0) {
-        genContainer.innerHTML = `<div class="col-span-full text-center py-8 text-xs font-rajdhani text-slate-500 uppercase tracking-widest">No general documents uploaded yet. Drag cards here once added.</div>`;
-      } else {
-        genContainer.innerHTML = generalDocs.map((doc, idx) => `
-          <div draggable="true" ondragstart="dragDoc(event, ${idx}, 'general', 'all')" ondragover="allowDrop(event)" ondrop="dropDoc(event, 'general', 'all', ${idx})" class="draggable-card bg-[#06101c] border border-[#132840] p-4 rounded-xl space-y-2 relative group">
-            <div class="flex items-center justify-between">
-              <span class="font-orbitron text-xs font-bold text-cyan-400 flex items-center gap-1.5"><i class="fa-solid fa-file-lines"></i><span>${doc.title}</span></span>
-              <div class="flex items-center gap-2">
-                <button onclick="openEditDocumentModal('general', ${idx})" class="text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button onclick="deleteDocItem('general', ${idx})" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
-              </div>
-            </div>
-            <div class="text-[11px] font-rajdhani text-slate-300">Expiry: ${doc.expiry || 'No Expiry'}</div>
-            <div class="text-[10px] font-rajdhani text-slate-500 truncate">${doc.notes || 'No notes'}</div>
-            <a href="${doc.link}" target="_blank" class="block w-full text-center py-2 bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">View in Google Drive</a>
-          </div>
-        `).join('');
-      }
+      const gen=document.getElementById('general-docs-container');
+      if(!gen) return;
+      gen.innerHTML = generalDocs.length ? generalDocs.map((d,i)=>`
+        <div draggable="true" ondragstart="dragDoc(event,${i},'general','all')" ondragover="allowDrop(event)" ondrop="dropDoc(event,'general','all',${i})" class="draggable-card bg-[#06101c] border border-[#132840] p-4 rounded-xl space-y-2">
+          <div class="flex justify-between"><span class="font-orbitron text-xs text-cyan-400">${d.title}</span><span><button onclick="openEditDocumentModal('general',${i})" class="text-slate-400 hover:text-amber-400 mr-2"><i class="fa-solid fa-pen"></i></button><button onclick="deleteDocItem('general',${i})" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button></span></div>
+          <div class="text-[11px] text-slate-300">Expiry: ${d.expiry||'No Expiry'}</div><div class="text-[10px] text-slate-500">${d.notes||''}</div>
+          <a href="${d.link}" target="_blank" rel="noopener" class="block text-center py-2 bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 rounded-lg text-[10px] font-orbitron"><i class="fa-solid fa-eye mr-1"></i> View Document</a>
+        </div>`).join('') : '<div class="col-span-full text-center py-8 text-xs text-slate-500">No general documents uploaded yet.</div>';
 
-      const vehVaultsContainer = document.getElementById('per-vehicle-vaults-container');
-      vehVaultsContainer.innerHTML = vehicles.map(v => {
-        const vDocs = vaultDocs.filter(d => d.vehicleId === v.id);
-        const docsHtml = vDocs.length === 0 
-          ? `<div class="col-span-full text-center py-6 text-xs font-rajdhani text-slate-500 uppercase tracking-widest">No vehicle documents uploaded for ${v.name} yet.</div>`
-          : vDocs.map((doc, idx) => {
-              const globalIdx = vaultDocs.findIndex(d => d === doc);
-              return `
-                <div draggable="true" ondragstart="dragDoc(event, ${globalIdx}, 'vehicle', '${v.id}')" ondragover="allowDrop(event)" ondrop="dropDoc(event, 'vehicle', '${v.id}', ${globalIdx})" class="draggable-card bg-[#06101c] border border-[#132840] p-4 rounded-xl space-y-2 relative group">
-                  <div class="flex items-center justify-between">
-                    <span class="font-orbitron text-xs font-bold text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-file-shield"></i><span>${doc.title}</span></span>
-                    <div class="flex items-center gap-2">
-                      <button onclick="openEditDocumentModal('vehicle', ${globalIdx})" class="text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button>
-                      <button onclick="deleteDocItem('vehicle', ${globalIdx})" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                  </div>
-                  <div class="text-[11px] font-rajdhani text-slate-300">Expiry: ${doc.expiry || 'No Expiry'}</div>
-                  <div class="text-[10px] font-rajdhani text-slate-500 truncate">${doc.notes || 'No notes'}</div>
-                  <a href="${doc.link}" target="_blank" class="block w-full text-center py-2 bg-amber-950/60 hover:bg-amber-900 border border-amber-500/40 text-amber-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">View in Google Drive</a>
-                </div>
-              `;
-            }).join('');
-
-        return `
-          <div class="bg-[#091524] border border-[#132840] p-5 rounded-2xl shadow-xl">
-            <div class="flex justify-between items-center mb-4">
-              <h4 class="font-orbitron text-sm font-bold text-amber-400 flex items-center gap-2"><i class="fa-solid ${v.icon}"></i><span>${v.name.toUpperCase()} DOCUMENT VAULT (DRAG TO REORDER)</span></h4>
-              <button onclick="openUploadModal('vehicle', '${v.id}')" class="px-3 py-1.5 bg-amber-500/15 border border-amber-500/50 text-amber-300 rounded-lg text-xs font-orbitron font-bold">+ Upload</button>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[80px]" ondragover="allowDrop(event)" ondrop="dropDoc(event, 'vehicle', '${v.id}')">${docsHtml}</div>
-          </div>
-        `;
+      const box=document.getElementById('per-vehicle-vaults-container');
+      if(!box) return;
+      box.innerHTML=vehicles.map(v=>{
+        const docs=vaultDocs.filter(d=>d.vehicleId===v.id);
+        const rc=getDocumentExpiryInfo(v.id,['rc book','rc']), ins=getDocumentExpiryInfo(v.id,['insurance']), puc=getDocumentExpiryInfo(v.id,['puc','pucc','puc certificate']);
+        return `<div class="bg-[#091524] border border-[#132840] p-5 rounded-2xl shadow-xl">
+          <div class="flex flex-wrap justify-between items-center gap-3 mb-4"><div><h4 class="font-orbitron text-sm font-bold text-amber-400"><i class="fa-solid ${v.icon} mr-1"></i>${v.name.toUpperCase()} — DOCUMENTS</h4>
+          <div class="flex flex-wrap gap-4 mt-2 text-[10px]"><span>RC: ${expiryBadge(rc)}</span><span>INS: ${expiryBadge(ins)}</span><span>PUCC: ${expiryBadge(puc)}</span></div></div>
+          <button onclick="openUploadModal('vehicle','${v.id}')" class="px-3 py-1.5 bg-amber-500/15 border border-amber-500/50 text-amber-300 rounded-lg text-xs font-orbitron">+ Upload</button></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[80px]" ondragover="allowDrop(event)" ondrop="dropDoc(event,'vehicle','${v.id}')">
+          ${docs.length?docs.map((d,i)=>`<div draggable="true" ondragstart="dragDoc(event,${i},'vehicle','${v.id}')" ondragover="allowDrop(event)" ondrop="dropDoc(event,'vehicle','${v.id}',${i})" class="draggable-card bg-[#06101c] border border-[#132840] p-4 rounded-xl space-y-2">
+            <div class="flex justify-between"><span class="font-orbitron text-xs text-amber-400">${d.title}</span><span class="flex gap-2"><i class="fa-solid fa-grip-vertical text-slate-600"></i><button onclick="openEditDocumentModal('vehicle','${d.id}')" class="text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen"></i></button><button onclick="deleteDocItem('vehicle','${d.id}')" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button></span></div>
+            <div class="text-[11px] text-slate-300">Expiry: ${d.expiry||'No Expiry'}</div><div class="text-[10px] text-slate-500 truncate">${d.notes||''}</div>
+            <a href="${d.link}" target="_blank" rel="noopener" class="block text-center py-2 bg-amber-950/60 border border-amber-500/40 text-amber-300 rounded-lg text-[10px] font-orbitron"><i class="fa-solid fa-eye mr-1"></i> View Document</a>
+          </div>`).join(''):'<div class="col-span-full text-center py-8 text-xs text-slate-500">No RC / Insurance / PUCC documents for this vehicle.</div>'}</div>
+          <p class="text-[10px] text-slate-500 mt-3">Drag only inside this vehicle section to change document order. View + Edit + Delete are available.</p>
+        </div>`;
       }).join('');
     }
 
-    let draggedItem = null;
-    function dragDoc(e, index, type, category) {
-      draggedItem = { index, type, category };
-      e.data.setData('text/plain', index);
-    }
-    function allowDrop(e) { e.preventDefault(); }
-    function dropDoc(e, type, category, targetIndex) {
-      e.preventDefault();
-      if(!draggedItem) return;
-      const fromIdx = draggedItem.index;
-      if(type === 'general') {
-        const item = generalDocs.splice(fromIdx, 1)[0];
-        if(targetIndex !== undefined && targetIndex <= generalDocs.length) {
-          generalDocs.splice(targetIndex, 0, item);
-        } else {
-          generalDocs.push(item);
-        }
-        localStorage.setItem('akash_general_docs', JSON.stringify(generalDocs));
-        syncToSheets('sync_general_vault', generalDocs);
+    let draggedItem=null;
+    function dragDoc(e,index,type,category){ draggedItem={index,type,category}; e.dataTransfer.effectAllowed='move'; }
+    function allowDrop(e){e.preventDefault();}
+    function dropDoc(e,type,category,targetIndex){
+      e.preventDefault(); if(!draggedItem) return;
+      if(draggedItem.type!==type || (type==='vehicle' && draggedItem.category!==category)){draggedItem=null;return;}
+      if(type==='general'){
+        const item=generalDocs.splice(draggedItem.index,1)[0]; if(item) generalDocs.splice(targetIndex===undefined?generalDocs.length:Math.min(targetIndex,generalDocs.length),0,item);
+        localStorage.setItem('akash_general_docs',JSON.stringify(generalDocs)); syncToSheets('sync_general_vault',generalDocs);
       } else {
-        const item = vaultDocs.splice(fromIdx, 1)[0];
-        if(targetIndex !== undefined) {
-          vaultDocs.splice(targetIndex, 0, item);
-        } else {
-          vaultDocs.push(item);
-        }
-        localStorage.setItem('akash_vault_docs', JSON.stringify(vaultDocs));
-        syncToSheets('sync_vault', vaultDocs);
+        const docs=vaultDocs.filter(d=>d.vehicleId===category), item=docs.splice(draggedItem.index,1)[0]; if(!item){draggedItem=null;return;}
+        docs.splice(targetIndex===undefined?docs.length:Math.min(targetIndex,docs.length),0,item);
+        vaultDocs=vaultDocs.filter(d=>d.vehicleId!==category).concat(docs);
+        localStorage.setItem('akash_vault_docs',JSON.stringify(vaultDocs)); syncToSheets('sync_vault',vaultDocs);
       }
-      draggedItem = null;
-      renderVaults();
+      draggedItem=null; renderVaults();
     }
 
     function openUploadModal(type, preselectVehId = '') {
@@ -824,7 +1253,8 @@
         doc = generalDocs[globalIndex];
       } else {
         vGroup.classList.remove('hidden');
-        doc = vaultDocs[globalIndex];
+        doc = vaultDocs.find(d => d.id === globalIndex);
+        if(!doc) return;
         vSelect.value = doc.vehicleId;
       }
 
@@ -836,9 +1266,7 @@
       document.getElementById('modal-upload').classList.remove('hidden');
     }
 
-    function closeUploadModal() {
-      document.getElementById('modal-upload').classList.add('hidden');
-    }
+    function closeUploadModal() { document.getElementById('modal-upload').classList.add('hidden'); }
 
     function handleSaveDocument(e) {
       e.preventDefault();
@@ -853,12 +1281,11 @@
       };
 
       if(editIdx !== '') {
-        const idx = Number(editIdx);
-        if(type === 'general') generalDocs[idx] = docData;
-        else vaultDocs[idx] = docData;
+        if(type === 'general') { const idx=Number(editIdx); if(generalDocs[idx]) generalDocs[idx]={...generalDocs[idx],...docData}; }
+        else { const idx=vaultDocs.findIndex(d=>d.id===editIdx); if(idx!==-1) vaultDocs[idx]={...vaultDocs[idx],...docData}; }
       } else {
-        if(type === 'general') generalDocs.push(docData);
-        else vaultDocs.push(docData);
+        docData.id=`doc_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+        if(type === 'general') generalDocs.push(docData); else vaultDocs.push(docData);
       }
 
       localStorage.setItem('akash_general_docs', JSON.stringify(generalDocs));
@@ -872,62 +1299,57 @@
       alertCustom('Document saved and synced to cloud successfully!');
     }
 
-    function deleteDocItem(type, index) {
+    function deleteDocItem(type, indexOrId) {
       if(confirm('Are you sure you want to delete this document?')) {
-        if(type === 'general') {
-          generalDocs.splice(index, 1);
-          localStorage.setItem('akash_general_docs', JSON.stringify(generalDocs));
-          syncToSheets('sync_general_vault', generalDocs);
-        } else {
-          vaultDocs.splice(index, 1);
-          localStorage.setItem('akash_vault_docs', JSON.stringify(vaultDocs));
-          syncToSheets('sync_vault', vaultDocs);
-        }
-        renderVaults();
-        alertCustom('Document deleted successfully!');
+        if(type==='general'){ generalDocs.splice(Number(indexOrId),1); localStorage.setItem('akash_general_docs',JSON.stringify(generalDocs)); syncToSheets('sync_general_vault',generalDocs); }
+        else { vaultDocs=vaultDocs.filter(d=>d.id!==indexOrId); localStorage.setItem('akash_vault_docs',JSON.stringify(vaultDocs)); syncToSheets('sync_vault',vaultDocs); }
+        renderVaults(); alertCustom('Document deleted successfully!');
       }
     }
 
-    // HISTORY WITH VIEW & EDIT ACTIONS
-    function renderHistory() {
-      const filterVeh = document.getElementById('filter-vehicle').value;
-      const tbody = document.getElementById('history-table-body');
-      const filtered = journeys.filter(j => filterVeh === 'all' || j.vehicle === filterVeh);
-      tbody.innerHTML = filtered.map(j => `
-        <tr class="border-b border-[#132840]/50 hover:bg-[#06101c]/50">
-          <td class="py-3 px-4 text-slate-300">${j.date}</td>
-          <td class="py-3 px-4 text-amber-400 font-bold">${j.vehicle}</td>
-          <td class="py-3 px-4 text-slate-100">${j.tripName || '-'}</td>
-          <td class="py-3 px-4 text-slate-300">${j.startPlace} → ${j.destination}</td>
-          <td class="py-3 px-4 text-cyan-400 font-bold">${j.distance} KM</td>
-          <td class="py-3 px-4 text-right space-x-2">
-            <button onclick="openViewJourneyModal(${j.id})" title="View Details" class="text-slate-400 hover:text-cyan-400"><i class="fa-solid fa-eye"></i></button>
-            <button onclick="openEditJourneyModal(${j.id})" title="Edit Journey" class="text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button>
-            <button onclick="deleteJourney(${j.id}, ${j.rowIndex || -1})" title="Delete Journey" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        </tr>
-      `).join('');
+    // HISTORY — independent vehicle/year/month/date filters.
+    function renderHistory(){
+      const fv=document.getElementById('filter-vehicle')?.value||'all', fy=document.getElementById('filter-year')?.value||'all', fm=document.getElementById('filter-month')?.value||'all', fd=document.getElementById('filter-date')?.value||'', tb=document.getElementById('history-table-body');
+      if(!tb)return; populateHistoryYearFilter();
+      const filtered=journeys.filter(j=>{const d=String(j.date||'');return(fv==='all'||j.vehicle===fv)&&(fy==='all'||d.slice(0,4)===fy)&&(fm==='all'||d.slice(5,7)===fm)&&(!fd||d===fd);});
+      if(!filtered.length){tb.innerHTML='<tr><td colspan="7" class="py-8 px-4 text-center text-slate-500">No journeys match the selected filters.</td></tr>';return;}
+      tb.innerHTML=filtered.map(j=>{const s=Array.isArray(j.stops)?j.stops:(Array.isArray(j.via)?j.via:[]);return `<tr class="border-b border-[#132840]/50 hover:bg-[#06101c]/50">
+        <td class="py-3 px-4 text-slate-300">${j.date}</td><td class="py-3 px-4 text-amber-400 font-bold">${j.vehicle}</td><td class="py-3 px-4">${j.tripName||'-'}</td>
+        <td class="py-3 px-4">${j.startPlace}${s.length?' → <span class="text-cyan-300">VIA '+s.join(' → ')+'</span> → ':' → '}${j.destination}</td>
+        <td class="py-3 px-4 text-cyan-400 font-bold">${Number(j.distance||0).toFixed(1)} KM</td><td class="py-3 px-4 text-amber-300 font-bold">${j.roundTrip?'2x ROUND':'ONE WAY'}</td>
+        <td class="py-3 px-4 text-right whitespace-nowrap"><button onclick="openViewJourneyModal(${j.id})" title="View" class="mr-2 text-slate-400 hover:text-cyan-400"><i class="fa-solid fa-eye"></i></button><button onclick="openEditJourneyModal(${j.id})" title="Edit" class="mr-2 text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteJourney(${j.id},${j.rowIndex||-1})" title="Delete" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button></td>
+      </tr>`;}).join('');
+    }
+    function populateHistoryYearFilter(){
+      const e=document.getElementById('filter-year');if(!e)return;const cur=e.value||'all';const years=[...new Set(journeys.map(j=>String(j.date||'').slice(0,4)).filter(y=>/^\\d{4}$/.test(y)))].sort().reverse();
+      e.innerHTML='<option value="all">All Years</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');e.value=years.includes(cur)?cur:'all';
+    }
+
+    function clearHistoryFilters() {
+      const v=document.getElementById('filter-vehicle'), y=document.getElementById('filter-year'), m=document.getElementById('filter-month'), d=document.getElementById('filter-date');
+      if(v)v.value='all'; if(y)y.value='all'; if(m)m.value='all'; if(d)d.value=''; renderHistory();
     }
 
     function openViewJourneyModal(id) {
       const j = journeys.find(item => item.id === id);
       if(!j) return;
+      const stopsHtml = j.stops && j.stops.length > 0 ? `<div><strong class="text-amber-400">Stops:</strong> ${j.stops.join(' → ')}</div>` : '';
       const content = document.getElementById('view-journey-content');
       content.innerHTML = `
         <div><strong class="text-amber-400">Date:</strong> ${j.date}</div>
         <div><strong class="text-amber-400">Vehicle:</strong> ${j.vehicle}</div>
         <div><strong class="text-amber-400">Route Name:</strong> ${j.tripName || 'N/A'}</div>
-        <div><strong class="text-amber-400">From:</strong> ${j.startPlace}</div>
+        <div><strong class="text-amber-400">Start:</strong> ${j.startPlace}</div>
+        ${stopsHtml}
         <div><strong class="text-amber-400">Destination:</strong> ${j.destination}</div>
         <div><strong class="text-amber-400">Total Distance:</strong> ${j.distance} KM</div>
         <div><strong class="text-amber-400">Start Odometer:</strong> ${j.startOdo || 'Not Recorded'}</div>
         <div><strong class="text-amber-400">End Odometer:</strong> ${j.endOdo || 'Not Recorded'}</div>
+        <div><strong class="text-amber-400">Round Trip:</strong> ${j.roundTrip ? 'Yes (2x)' : 'No'}</div>
       `;
       document.getElementById('modal-view-journey').classList.remove('hidden');
     }
-    function closeViewJourneyModal() {
-      document.getElementById('modal-view-journey').classList.add('hidden');
-    }
+    function closeViewJourneyModal() { document.getElementById('modal-view-journey').classList.add('hidden'); }
 
     function openEditJourneyModal(id) {
       const j = journeys.find(item => item.id === id);
@@ -940,11 +1362,12 @@
       document.getElementById('edit-j-start').value = j.startPlace || '';
       document.getElementById('edit-j-dest').value = j.destination || '';
       document.getElementById('edit-j-dist').value = j.distance || '';
+      document.getElementById('edit-j-start-odo').value = j.startOdo || '';
+      document.getElementById('edit-j-end-odo').value = j.endOdo || '';
+      document.getElementById('edit-j-round-trip').checked = !!j.roundTrip;
       document.getElementById('modal-edit-journey').classList.remove('hidden');
     }
-    function closeEditJourneyModal() {
-      document.getElementById('modal-edit-journey').classList.add('hidden');
-    }
+    function closeEditJourneyModal() { document.getElementById('modal-edit-journey').classList.add('hidden'); }
 
     function handleUpdateJourney(e) {
       e.preventDefault();
@@ -957,6 +1380,9 @@
         journeys[idx].startPlace = document.getElementById('edit-j-start').value.toUpperCase();
         journeys[idx].destination = document.getElementById('edit-j-dest').value.toUpperCase();
         journeys[idx].distance = Number(document.getElementById('edit-j-dist').value);
+        journeys[idx].startOdo = document.getElementById('edit-j-start-odo').value;
+        journeys[idx].endOdo = document.getElementById('edit-j-end-odo').value;
+        journeys[idx].roundTrip = document.getElementById('edit-j-round-trip').checked;
 
         localStorage.setItem('akash_journeys', JSON.stringify(journeys));
         syncToSheets('edit_journey', journeys[idx]);
@@ -976,7 +1402,7 @@
       }
     }
 
-    // CLOUD SYNC & GOOGLE SHEETS BRIDGE
+    // CLOUD SYNC
     function openSheetsModal() { document.getElementById('modal-sheets').classList.remove('hidden'); }
     function closeSheetsModal() { document.getElementById('modal-sheets').classList.add('hidden'); }
     function saveSheetsUrl() {
@@ -1019,6 +1445,10 @@
               maintLogs = data.maint;
               localStorage.setItem('akash_maint', JSON.stringify(maintLogs));
             }
+            if(data.mileageCalculations) {
+              mileageCalculations = data.mileageCalculations;
+              localStorage.setItem('akash_mileage_calculations', JSON.stringify(mileageCalculations));
+            }
             if(data.vehicles && data.vehicles.length > 0) {
               vehicles = data.vehicles;
               localStorage.setItem('akash_vehicles', JSON.stringify(vehicles));
@@ -1028,11 +1458,11 @@
               localStorage.setItem('akash_tyre_data', JSON.stringify(tyreData));
             }
             if(data.vaultDocs) {
-              vaultDocs = data.vaultDocs;
+              vaultDocs = data.vaultDocs.map((d,i)=>({...d,id:d.id||`doc_${i}_${Date.now()}`}));
               localStorage.setItem('akash_vault_docs', JSON.stringify(vaultDocs));
             }
             if(data.generalDocs) {
-              generalDocs = data.generalDocs;
+              generalDocs = data.generalDocs.map((d,i)=>({...d,id:d.id||`gdoc_${i}_${Date.now()}`}));
               localStorage.setItem('akash_general_docs', JSON.stringify(generalDocs));
             }
             if(data.reminderEmail) {
