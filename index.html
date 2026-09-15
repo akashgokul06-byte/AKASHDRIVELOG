@@ -948,7 +948,7 @@
                 ${isOutbound ? 'SELECT OUTBOUND' : 'SELECT RETURN'} — ${Number(r.distance).toFixed(1)} KM
               </button>
 
-              <button onclick="navigateToGoogleMaps(${JSON.stringify(navFrom)}, ${JSON.stringify(navTo)}, ${JSON.stringify(navVia)})"
+              <button onclick="navigatePlannedRoute(${idx}, '${direction}')"
                 class="w-full py-2 bg-cyan-500/15 hover:bg-cyan-500 hover:text-black border border-cyan-500/40 text-cyan-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
                 <i class="fa-solid fa-location-arrow mr-1"></i> NAVIGATE
               </button>
@@ -1220,6 +1220,26 @@
       alertCustom(`Selected route distance: ${Number(route.distance || 0).toFixed(1)} KM. This planning KM is now in the Journey form.`);
     }
 
+    function navigatePlannedRoute(routeIndex, direction) {
+      const input = window.currentComputedRouteInput || {};
+      const isReturn = direction === 'return';
+
+      const from = isReturn ? input.to : input.from;
+      const to = isReturn ? input.from : input.to;
+      const via = isReturn
+        ? (Array.isArray(input.returnStops) ? input.returnStops : [])
+        : (Array.isArray(input.stops) ? input.stops : []);
+
+      if(!from || !to) {
+        alertCustom('Please compute the route first.');
+        return;
+      }
+
+      // Route selection is only for planning KM. Navigation opens Google Maps
+      // with the correct direction and the independently entered Via stops.
+      navigateToGoogleMaps(from, to, via);
+    }
+
     function navigateToGoogleMaps(from, to, via) {
       const origin = String(from || '').trim();
       const destination = String(to || '').trim();
@@ -1239,11 +1259,14 @@
       params.set('travelmode', 'driving');
       if(stops.length) params.set('waypoints', stops.join('|'));
 
-      window.open(
-        'https://www.google.com/maps/dir/?' + params.toString(),
-        '_blank',
-        'noopener,noreferrer'
-      );
+      const mapsUrl = 'https://www.google.com/maps/dir/?' + params.toString();
+      const mapsWindow = window.open(mapsUrl, '_blank');
+      if(!mapsWindow) {
+        // Popup blockers may prevent a new tab. Fall back to the same tab.
+        window.location.href = mapsUrl;
+      } else {
+        try { mapsWindow.opener = null; } catch(e) {}
+      }
     }
 
     function selectAndApplyRoute(from, to, distance, routeName) {
