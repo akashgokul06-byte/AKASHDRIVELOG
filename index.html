@@ -1822,7 +1822,7 @@
       </tr>`;}).join('');
     }
     function populateHistoryYearFilter(){
-      const e=document.getElementById('filter-year');if(!e)return;const cur=e.value||'all';const years=[...new Set(journeys.map(j=>String(j.date||'').slice(0,4)).filter(y=>/^\\d{4}$/.test(y)))].sort().reverse();
+      const e=document.getElementById('filter-year');if(!e)return;const cur=e.value||'all';const years=[...new Set(journeys.map(j=>String(j.date||'').slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort().reverse();
       e.innerHTML='<option value="all">All Years</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');e.value=years.includes(cur)?cur:'all';
     }
 
