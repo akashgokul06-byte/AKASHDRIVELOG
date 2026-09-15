@@ -833,38 +833,68 @@
         .replace(/'/g, '&#039;');
     }
 
-    function routeHashDistance(from, to, stops, variant) {
-      const seed = [from, to, ...(stops || []), String(variant || 0)].join('|');
-      let hash = 0;
-      for(let i = 0; i < seed.length; i++) {
-        hash = ((hash << 5) - hash) + seed.charCodeAt(i);
-        hash |= 0;
-      }
-      return 32 + Math.abs(hash % 22) + ((stops || []).length * 10) + (variant * 5);
+    async function geocodePlaceDirect(place) {
+      const q = String(place || '').trim();
+      if(!q) throw new Error('A place is missing.');
+      const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=in&q=' + encodeURIComponent(q + ', India');
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if(!res.ok) throw new Error(`Geocoding failed (${res.status}).`);
+      const data = await res.json();
+      if(!Array.isArray(data) || !data.length) throw new Error(`Could not find: ${q}`);
+      return { lat: Number(data[0].lat), lon: Number(data[0].lon), display: data[0].display_name || q };
     }
 
-    function routeTimeFromKm(km, variant) {
-      const avgKmh = [46, 52, 58, 48, 55][variant % 5];
-      const mins = Math.max(8, Math.round((km / avgKmh) * 60));
+    async function computeOSRMDirect(from, to, stops) {
+      const places = [from, ...(stops || []), to];
+      const coords = [];
+      for(const place of places) coords.push(await geocodePlaceDirect(place));
+      const coordString = coords.map(c => `${c.lon},${c.lat}`).join(';');
+      const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?alternatives=true&overview=full&geometries=geojson&steps=false`;
+      const res = await fetch(url);
+      if(!res.ok) throw new Error(`OSRM routing failed (${res.status}).`);
+      const data = await res.json();
+      if(data.code !== 'Ok' || !Array.isArray(data.routes) || !data.routes.length) throw new Error('OSRM could not find a drivable route for these places.');
+      return data.routes.map((r, idx) => ({
+        id: idx + 1,
+        name: idx === 0 ? 'Fastest / Recommended Route' : idx === 1 ? 'Alternative Route 2' : idx === 2 ? 'Alternative Route 3' : `Alternative Route ${idx + 1}`,
+        distance: Number(r.distance || 0) / 1000,
+        time: formatRouteDuration(r.duration),
+        via: (stops || []).length ? stops.join(' → ') : 'Direct route',
+        geometry: r.geometry || null,
+        durationSeconds: Number(r.duration || 0)
+      }));
+    }
+
+    function formatRouteDuration(seconds) {
+      const mins = Math.max(1, Math.round(Number(seconds || 0) / 60));
       const h = Math.floor(mins / 60);
       const m = mins % 60;
       return h ? `${h} hr ${String(m).padStart(2,'0')} mins` : `${m} mins`;
     }
 
-    function makePlannedRoute(from, to, stops, variant, label) {
-      const distance = routeHashDistance(from, to, stops, variant);
-      return {
-        id: variant + 1,
-        name: label,
-        distance: distance,
-        time: routeTimeFromKm(distance, variant),
-        via: stops.length ? stops.join(' → ') : (
-          variant === 0 ? 'Main Highway' :
-          variant === 1 ? 'Expressway & Main Roads' :
-          variant === 2 ? 'Ring Bypass & Link Roads' :
-          'Alternative State Highway'
-        )
-      };
+    async function computeOSRMViaBackend(from, to, stops) {
+      if(!sheetsWebhookUrl) return null;
+      const params = new URLSearchParams();
+      params.set('action', 'osrm_route');
+      params.set('from', from);
+      params.set('to', to);
+      params.set('stops', JSON.stringify(stops || []));
+      const url = sheetsWebhookUrl + (sheetsWebhookUrl.includes('?') ? '&' : '?') + params.toString();
+      const res = await fetch(url);
+      if(!res.ok) throw new Error(`Routing service failed (${res.status}).`);
+      const data = await res.json();
+      if(data.status !== 'success') throw new Error(data.error || 'Routing service could not calculate the route.');
+      return Array.isArray(data.routes) ? data.routes : [];
+    }
+
+    async function getOSRMRoutes(from, to, stops) {
+      try {
+        const backendRoutes = await computeOSRMViaBackend(from, to, stops);
+        if(backendRoutes && backendRoutes.length) return backendRoutes;
+      } catch(err) {
+        console.warn('Backend OSRM route failed; trying direct OSRM fallback.', err);
+      }
+      return await computeOSRMDirect(from, to, stops);
     }
 
     function toggleReturnRoutePlanner() {
@@ -877,12 +907,17 @@
       }
     }
 
-    function generateMultipleRoutes() {
+    async function generateMultipleRoutes() {
       const from = document.getElementById('calc-from')?.value.trim() || '';
       const to = document.getElementById('calc-to')?.value.trim() || '';
       const roundTrip = !!document.getElementById('calc-route-round-trip')?.checked;
       const stops = calcStops.map(s => String(s || '').trim()).filter(Boolean);
       const returnStops = returnCalcStops.map(s => String(s || '').trim()).filter(Boolean);
+
+      if(stops.length > 10 || returnStops.length > 10) {
+        alertCustom('OSRM routing supports a maximum of 10 Via stops per direction in this setup.');
+        return;
+      }
 
       if(!from || !to) {
         alertCustom('Please enter both From Place and Destination Place.');
@@ -894,113 +929,85 @@
 
       const mileage = Number(document.getElementById('calc-mileage')?.value) || 15;
       const fuelPrice = Number(document.getElementById('calc-fuel-price')?.value) || 102.50;
+      const button = document.querySelector('button[onclick="generateMultipleRoutes()"]');
+      if(button) { button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Calculating real road routes...'; }
+      container.innerHTML = `<div class="bg-[#06101c] border border-cyan-500/30 rounded-xl p-5 text-center text-cyan-300 text-sm font-rajdhani"><i class="fa-solid fa-route fa-spin mr-2"></i> Finding real road routes using OpenStreetMap/OSRM...</div>`;
 
       selectedOutboundRouteIndex = null;
       selectedReturnRouteIndex = null;
 
-      // Outbound choices.
-      const outboundRoutes = [
-        makePlannedRoute(from, to, stops, 0, 'Fastest / Main Highway'),
-        makePlannedRoute(from, to, stops, 1, 'Direct Highway Route'),
-        makePlannedRoute(from, to, stops, 2, 'Bypass & Ring Road Route')
-      ];
+      try {
+        // OSRM is used ONLY for route calculation. Google Maps remains the navigation engine.
+        const outboundRoutes = await getOSRMRoutes(from, to, stops);
+        let returnRoutes = [];
+        if(roundTrip) returnRoutes = await getOSRMRoutes(to, from, returnStops);
 
-      // Return choices are independently calculated in the reverse direction.
-      // The return route is NOT assumed to be the same as the outbound route.
-      const returnRoutes = [
-        makePlannedRoute(to, from, returnStops, 0, 'Fastest / Return Main Highway'),
-        makePlannedRoute(to, from, returnStops, 1, 'Return Alternate Highway'),
-        makePlannedRoute(to, from, returnStops, 2, 'Return Bypass & Ring Road')
-      ];
+        window.currentComputedRoutes = outboundRoutes;
+        window.currentReturnRoutes = returnRoutes;
+        window.currentComputedRouteInput = { from, to, stops, returnStops, roundTrip };
 
-      window.currentComputedRoutes = outboundRoutes;
-      window.currentReturnRoutes = returnRoutes;
-      window.currentComputedRouteInput = { from, to, stops, returnStops, roundTrip };
-
-      const routeCard = (r, idx, direction) => {
-        const isOutbound = direction === 'outbound';
-        const navFrom = isOutbound ? from : to;
-        const navTo = isOutbound ? to : from;
-        const navVia = isOutbound ? stops : returnStops;
-
-        return `
-          <div id="${direction}-route-card-${idx}"
-               class="bg-[#06101c] border border-[#132840] p-3.5 rounded-xl space-y-2 hover:border-amber-500/50 transition-all">
-            <div class="flex justify-between items-center gap-3">
-              <div class="font-orbitron text-xs font-bold text-amber-400">${escapeHtml(r.name)}</div>
-              <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-rajdhani font-bold whitespace-nowrap">
-                ${Number(r.distance).toFixed(1)} KM · ${escapeHtml(r.time)}
-              </span>
-            </div>
-
-            <div class="text-[11px] font-rajdhani text-slate-300">
-              Via: ${escapeHtml(r.via)}
-            </div>
-
-            <div class="text-[11px] font-rajdhani text-slate-300">
-              Est. Fuel Cost: <strong class="text-emerald-400">₹${((Number(r.distance) / mileage) * fuelPrice).toFixed(0)}</strong>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button onclick="${isOutbound ? `selectOutboundRoute(${idx})` : `selectReturnRoute(${idx})`}"
-                class="w-full py-2 bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
-                <i class="fa-solid fa-circle-check mr-1"></i>
-                ${isOutbound ? 'SELECT OUTBOUND' : 'SELECT RETURN'} — ${Number(r.distance).toFixed(1)} KM
-              </button>
-
-              <button onclick="navigatePlannedRoute(${idx}, '${direction}')"
-                class="w-full py-2 bg-cyan-500/15 hover:bg-cyan-500 hover:text-black border border-cyan-500/40 text-cyan-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
-                <i class="fa-solid fa-location-arrow mr-1"></i> NAVIGATE
-              </button>
-            </div>
-          </div>`;
-      };
-
-      let outboundHtml = `
-        <div class="mb-3">
-          <div class="font-orbitron text-sm font-bold text-amber-400">OUTBOUND ROUTE — ${escapeHtml(from)} → ${escapeHtml(to)}</div>
-          <div class="text-[10px] font-rajdhani text-slate-400 mt-1">Select the route you actually want to use for the outward journey.</div>
-        </div>
-        ${outboundRoutes.map((r, i) => routeCard(r, i, 'outbound')).join('')}
-      `;
-
-      let returnHtml = '';
-      if(roundTrip) {
-        returnHtml = `
-          <div class="mt-6 pt-5 border-t border-amber-500/20">
-            <div class="mb-3">
-              <div class="font-orbitron text-sm font-bold text-cyan-300">RETURN ROUTE — ${escapeHtml(to)} → ${escapeHtml(from)}</div>
-              <div class="text-[10px] font-rajdhani text-slate-400 mt-1">
-                Return routes are completely separate. You can enter different Via points because the return road may differ from the outward road.
+        const routeCard = (r, idx, direction) => {
+          const isOutbound = direction === 'outbound';
+          const via = isOutbound ? stops : returnStops;
+          return `
+            <div id="${direction}-route-card-${idx}"
+                 class="bg-[#06101c] border border-[#132840] p-3.5 rounded-xl space-y-2 hover:border-amber-500/50 transition-all">
+              <div class="flex justify-between items-center gap-3">
+                <div class="font-orbitron text-xs font-bold ${isOutbound ? 'text-amber-400' : 'text-cyan-300'}">${escapeHtml(r.name)}</div>
+                <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-rajdhani font-bold whitespace-nowrap">
+                  ${Number(r.distance).toFixed(1)} KM · ${escapeHtml(r.time)}
+                </span>
               </div>
-            </div>
-            <div class="space-y-3">
-              ${returnRoutes.map((r, i) => routeCard(r, i, 'return')).join('')}
-            </div>
-
-            <div id="roundtrip-selection-summary"
-                 class="mt-4 bg-[#06101c] border border-amber-500/30 rounded-xl p-4 text-center">
-              <div class="text-xs font-rajdhani text-slate-400">
-                Select <strong class="text-amber-300">one outbound</strong> and <strong class="text-cyan-300">one return</strong> route.
+              <div class="text-[11px] font-rajdhani text-slate-300">
+                Via: ${escapeHtml(via.length ? via.join(' → ') : 'Direct route')}
               </div>
-            </div>
-          </div>`;
+              <div class="text-[11px] font-rajdhani text-slate-300">
+                OSRM road distance · Est. Fuel Cost: <strong class="text-emerald-400">₹${((Number(r.distance) / mileage) * fuelPrice).toFixed(0)}</strong>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button onclick="${isOutbound ? `selectOutboundRoute(${idx})` : `selectReturnRoute(${idx})`}" class="w-full py-2 bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
+                  <i class="fa-solid fa-circle-check mr-1"></i>${isOutbound ? 'SELECT OUTBOUND' : 'SELECT RETURN'} — ${Number(r.distance).toFixed(1)} KM
+                </button>
+                <button onclick="navigatePlannedRoute(${idx}, '${direction}')" class="w-full py-2 bg-cyan-500/15 hover:bg-cyan-500 hover:text-black border border-cyan-500/40 text-cyan-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
+                  <i class="fa-solid fa-location-arrow mr-1"></i> NAVIGATE IN GOOGLE MAPS
+                </button>
+              </div>
+            </div>`;
+        };
+
+        let outboundHtml = `
+          <div class="mb-3">
+            <div class="font-orbitron text-sm font-bold text-amber-400">OUTBOUND ROUTE — ${escapeHtml(from)} → ${escapeHtml(to)}</div>
+            <div class="text-[10px] font-rajdhani text-slate-400 mt-1">Real road distance calculated by OSRM. Navigation opens Google Maps.</div>
+          </div>
+          ${outboundRoutes.map((r, i) => routeCard(r, i, 'outbound')).join('')}`;
+
+        let returnHtml = '';
+        if(roundTrip) {
+          returnHtml = `
+            <div class="mt-6 pt-5 border-t border-amber-500/20">
+              <div class="mb-3">
+                <div class="font-orbitron text-sm font-bold text-cyan-300">RETURN ROUTE — ${escapeHtml(to)} → ${escapeHtml(from)}</div>
+                <div class="text-[10px] font-rajdhani text-slate-400 mt-1">Return route is calculated independently with its own Via stops.</div>
+              </div>
+              <div class="space-y-3">${returnRoutes.map((r, i) => routeCard(r, i, 'return')).join('')}</div>
+              <div id="roundtrip-selection-summary" class="mt-4 bg-[#06101c] border border-amber-500/30 rounded-xl p-4 text-center">
+                <div class="text-xs font-rajdhani text-slate-400">Select <strong class="text-amber-300">one outbound</strong> and <strong class="text-cyan-300">one return</strong> route.</div>
+              </div>
+            </div>`;
+        }
+
+        container.innerHTML = `<div class="space-y-3">${outboundHtml}</div>${returnHtml}`;
+        if(dashboardMapInstance && outboundRoutes.length) drawOSRMRoutesOnMap(outboundRoutes);
+        const badge = document.getElementById('map-status-badge');
+        if(badge) badge.innerText = roundTrip ? 'Select Outbound + Return' : `${outboundRoutes.length} Real Routes`;
+      } catch(err) {
+        console.error(err);
+        container.innerHTML = `<div class="bg-rose-500/10 border border-rose-500/30 rounded-xl p-5 text-center text-rose-300 text-sm font-rajdhani">${escapeHtml(err.message || 'Unable to calculate route. Please check the place names and try again.')}</div>`;
+        alertCustom(err.message || 'Unable to calculate the route.');
+      } finally {
+        if(button) { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-compass mr-1"></i> Compute Available Routes'; }
       }
-
-      container.innerHTML = `<div class="space-y-3">${outboundHtml}</div>${returnHtml}`;
-
-      if(!roundTrip) {
-        // For one-way trips, selecting one outbound route is sufficient.
-        container.querySelectorAll('[id^="outbound-route-card-"]').forEach(() => {});
-      }
-
-      if(document.getElementById('route-planner-toggle')?.checked) {
-        if(!dashboardMapInstance) initMaps();
-        setTimeout(() => drawPlannedRoutesOnMap(outboundRoutes), 350);
-      }
-
-      const badge = document.getElementById('map-status-badge');
-      if(badge) badge.innerText = roundTrip ? 'Select Outbound + Return' : `${outboundRoutes.length} Planning Routes`;
     }
 
     function updateRoundTripSelectionSummary() {
@@ -1154,36 +1161,26 @@
       }
     }
 
-    function drawPlannedRoutesOnMap(routes) {
+    function drawOSRMRoutesOnMap(routes) {
       if(!dashboardMapInstance || !routes.length) return;
-
       routePolylines.forEach(p => dashboardMapInstance.removeLayer(p));
       routePolylines = [];
-
-      // The old planner uses route planning estimates rather than a road-routing
-      // geometry engine, so the map is illustrative only.
-      const center = dashboardMapInstance.getCenter();
-      const baseLat = center.lat;
-      const baseLng = center.lng;
-
+      const bounds = [];
       routes.forEach((r, idx) => {
-        const spread = 0.01 + idx * 0.006;
-        const points = [
-          [baseLat - spread, baseLng - spread],
-          [baseLat - spread/2, baseLng + spread/3],
-          [baseLat + spread/3, baseLng + spread],
-          [baseLat + spread, baseLng + spread/2]
-        ];
-
-        const line = L.polyline(points, {
+        const coords = r.geometry?.coordinates || [];
+        if(!coords.length) return;
+        const latLngs = coords.map(c => [c[1], c[0]]);
+        latLngs.forEach(p => bounds.push(p));
+        const line = L.polyline(latLngs, {
           color: idx === 0 ? '#f59e0b' : idx === 1 ? '#06b6d4' : '#10b981',
-          weight: 5,
-          opacity: 0.85,
+          weight: idx === 0 ? 6 : 4,
+          opacity: idx === 0 ? 0.9 : 0.65,
           dashArray: idx === 0 ? null : '8,7'
         }).addTo(dashboardMapInstance)
-          .bindPopup(`<b>${escapeHtml(r.name)}</b><br>Total: ${r.distance.toFixed(1)} KM`);
+          .bindPopup(`<b>${escapeHtml(r.name)}</b><br>${Number(r.distance).toFixed(1)} KM · ${escapeHtml(r.time)}`);
         routePolylines.push(line);
       });
+      if(bounds.length) dashboardMapInstance.fitBounds(bounds, { padding: [30, 30] });
     }
 
     function selectAndApplyRoute(routeIndex) {
@@ -1217,7 +1214,7 @@
         distanceField.select();
       }, 450);
 
-      alertCustom(`Selected route distance: ${Number(route.distance || 0).toFixed(1)} KM. This planning KM is now in the Journey form.`);
+      alertCustom(`Selected route distance: ${Number(route.distance || 0).toFixed(1)} KM. This OSRM road distance is now in the Journey form.`);
     }
 
     function navigatePlannedRoute(routeIndex, direction) {
