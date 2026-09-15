@@ -844,9 +844,16 @@
       return { lat: Number(data[0].lat), lon: Number(data[0].lon), display: data[0].display_name || q };
     }
 
-    async function computeOSRMLegAlternatives(fromCoord, toCoord) {
-      const coordString = `${fromCoord.lon},${fromCoord.lat};${toCoord.lon},${toCoord.lat}`;
-      const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?alternatives=3&overview=full&geometries=geojson&steps=false`;
+    async function computeOSRMRouteVariant(coords, excludeClass = '') {
+      const coordString = coords.map(c => `${c.lon},${c.lat}`).join(';');
+      const params = new URLSearchParams();
+      params.set('alternatives', '3');
+      params.set('overview', 'full');
+      params.set('geometries', 'geojson');
+      params.set('steps', 'false');
+      if(excludeClass) params.set('exclude', excludeClass);
+
+      const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?${params.toString()}`;
       const res = await fetch(url);
       if(!res.ok) throw new Error(`OSRM routing failed (${res.status}).`);
       const data = await res.json();
@@ -856,15 +863,16 @@
       return data.routes;
     }
 
-    function combineOSRMGeometries(legRoutes, routeIndex) {
-      let coordinates = [];
-      for(const leg of legRoutes) {
-        const route = leg[Math.min(routeIndex, leg.length - 1)];
-        const part = route?.geometry?.coordinates || [];
-        if(!part.length) continue;
-        coordinates = coordinates.length ? coordinates.concat(part.slice(1)) : part.slice();
-      }
-      return coordinates.length ? { type: 'LineString', coordinates } : null;
+    function makeOSRMRoutesUnique(routes) {
+      const unique = [];
+      routes.forEach(route => {
+        const duplicate = unique.some(existing =>
+          Math.abs(Number(existing.distance) - Number(route.distance)) < 0.05 &&
+          Math.abs(Number(existing.durationSeconds) - Number(route.durationSeconds)) < 5
+        );
+        if(!duplicate) unique.push(route);
+      });
+      return unique.slice(0, 3);
     }
 
     async function computeOSRMDirect(from, to, stops) {
@@ -872,43 +880,47 @@
       const coords = [];
       for(const place of places) coords.push(await geocodePlaceDirect(place));
 
-      // Calculate alternatives independently for each leg. This keeps every Via
-      // stop mandatory while still allowing up to 3 genuine OSRM road alternatives.
-      const legRoutes = [];
-      for(let i = 0; i < coords.length - 1; i++) {
-        legRoutes.push(await computeOSRMLegAlternatives(coords[i], coords[i + 1]));
+      // IMPORTANT: Keep all Via points in ONE OSRM request. OSRM's route API
+      // accepts coordinates in the supplied order and can return alternatives
+      // for the complete route, rather than combining unrelated leg alternatives.
+      const candidates = [];
+
+      const normalRoutes = await computeOSRMRouteVariant(coords, '');
+      normalRoutes.forEach((route, idx) => candidates.push({
+        source: idx === 0 ? 'Fastest / Recommended Route' : `Alternative Route ${idx + 1}`,
+        route
+      }));
+
+      // If OSRM does not provide enough distinct alternatives, ask for real
+      // alternative road strategies. These are still OSRM road routes, not fake
+      // distances: one avoids motorways and one avoids toll roads.
+      if(candidates.length < 3) {
+        try {
+          const noMotorway = await computeOSRMRouteVariant(coords, 'motorway');
+          noMotorway.forEach(route => candidates.push({ source: 'Alternative — Avoid Motorways', route }));
+        } catch(e) { console.warn('OSRM motorway-avoid alternative unavailable:', e); }
+      }
+      if(candidates.length < 3) {
+        try {
+          const noToll = await computeOSRMRouteVariant(coords, 'toll');
+          noToll.forEach(route => candidates.push({ source: 'Alternative — Avoid Tolls', route }));
+        } catch(e) { console.warn('OSRM toll-avoid alternative unavailable:', e); }
       }
 
-      let routeCount = 1;
-      legRoutes.forEach(leg => routeCount = Math.max(routeCount, Math.min(3, leg.length)));
+      const unique = makeOSRMRoutesUnique(candidates.map(item => ({
+        ...item.route,
+        name: item.source
+      })));
 
-      const output = [];
-      for(let idx = 0; idx < Math.min(3, routeCount); idx++) {
-        let totalDistance = 0;
-        let totalSeconds = 0;
-        legRoutes.forEach(leg => {
-          const route = leg[Math.min(idx, leg.length - 1)];
-          totalDistance += Number(route.distance || 0);
-          totalSeconds += Number(route.duration || 0);
-        });
-
-        output.push({
-          id: idx + 1,
-          name: idx === 0 ? 'Fastest / Recommended Route' : idx === 1 ? 'Alternative Route 2' : 'Alternative Route 3',
-          distance: totalDistance / 1000,
-          time: formatRouteDuration(totalSeconds),
-          via: (stops || []).length ? stops.join(' → ') : 'Direct route',
-          geometry: combineOSRMGeometries(legRoutes, idx),
-          durationSeconds: totalSeconds
-        });
-      }
-
-      // Remove duplicate alternatives when the routing engine cannot find a
-      // meaningfully different path for one of the legs.
-      return output.filter((route, idx, arr) => arr.findIndex(r =>
-        Math.abs(Number(r.distance) - Number(route.distance)) < 0.01 &&
-        Math.abs(Number(r.durationSeconds) - Number(route.durationSeconds)) < 2
-      ) === idx);
+      return unique.map((route, idx) => ({
+        id: idx + 1,
+        name: idx === 0 ? 'Fastest / Recommended Route' : (route.name || `Alternative Route ${idx + 1}`),
+        distance: Number(route.distance || 0) / 1000,
+        time: formatRouteDuration(route.duration),
+        via: (stops || []).length ? stops.join(' → ') : 'Direct route',
+        geometry: route.geometry || null,
+        durationSeconds: Number(route.duration || 0)
+      }));
     }
     function formatRouteDuration(seconds) {
       const mins = Math.max(1, Math.round(Number(seconds || 0) / 60));
