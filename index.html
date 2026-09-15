@@ -12,10 +12,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Leaflet Core CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <!-- Chart.js for Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -59,15 +55,6 @@
       background-size: cover;
       background-repeat: no-repeat;
       transition: background-image 0.5s ease-in-out;
-    }
-    .leaflet-container {
-      background: #06101c !important;
-      font-family: 'Rajdhani', sans-serif;
-      outline: none;
-    }
-    .leaflet-tile-pane {
-      filter: invert(100%) hue-rotate(180deg) brightness(92%) contrast(105%);
-      -webkit-filter: invert(100%) hue-rotate(180deg) brightness(92%) contrast(105%);
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #06101d; }
@@ -234,7 +221,7 @@
 
         <div class="bg-[#091524] border border-[#132840] p-6 rounded-2xl shadow-xl">
           <h3 class="font-orbitron text-base font-bold text-cyan-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-gauge"></i><span>PER-VEHICLE TYRE AIR PRESSURE REFILL (15-DAY REMINDER)</span></h3>
-          <p class="text-xs font-rajdhani text-slate-400 mb-6">Each vehicle maintains an independent 15-day countdown timer for tyre air pressure checks. Click the log button whenever you refill.</p>
+          <p class="text-xs font-rajdhani text-slate-400 mb-6">Each vehicle maintains an independent 15-day countdown timer for tyre air pressure checks. Select the exact refill date and click log.</p>
           <div id="tyre-reminders-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
       </div>
@@ -321,6 +308,37 @@
   </section>
 
   <!-- MODALS -->
+  <!-- VIEW JOURNEY MODAL -->
+  <div id="modal-view-journey" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#091524] border border-[#132840] w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
+      <div class="flex justify-between items-center"><h3 class="font-orbitron text-base font-bold text-cyan-400">Journey Details</h3><button onclick="closeViewJourneyModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+      <div id="view-journey-content" class="space-y-3 font-rajdhani text-sm text-slate-200"></div>
+      <div class="flex justify-end pt-2"><button onclick="closeViewJourneyModal()" class="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-black rounded-xl text-xs font-orbitron font-bold">Close</button></div>
+    </div>
+  </div>
+
+  <!-- EDIT JOURNEY MODAL -->
+  <div id="modal-edit-journey" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#091524] border border-[#132840] w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
+      <div class="flex justify-between items-center"><h3 class="font-orbitron text-base font-bold text-amber-400">Edit Journey</h3><button onclick="closeEditJourneyModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+      <form onsubmit="handleUpdateJourney(event)" class="space-y-3">
+        <input type="hidden" id="edit-j-id" />
+        <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Date</label><input type="date" id="edit-j-date" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2 text-sm text-slate-100 outline-none" /></div>
+        <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Vehicle</label><select id="edit-j-vehicle" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2 text-sm text-slate-100 outline-none"></select></div>
+        <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Trip / Route Name</label><input type="text" id="edit-j-name" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2 text-sm text-slate-100 outline-none" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Place</label><input type="text" id="edit-j-start" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
+          <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Destination</label><input type="text" id="edit-j-dest" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
+        </div>
+        <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Distance (KM)</label><input type="number" step="0.1" id="edit-j-dist" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2 text-sm text-slate-100 outline-none" /></div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="closeEditJourneyModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-orbitron font-bold">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black rounded-xl text-xs font-orbitron font-bold">Update Journey</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- GOOGLE SHEETS MODAL -->
   <div id="modal-sheets" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-[#091524] border border-[#132840] w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
@@ -410,6 +428,7 @@
       document.getElementById('nav-email-display').innerText = `NOTIFICATION: ${reminderEmail}`;
       if(sheetsWebhookUrl) {
         document.getElementById('sheetBtnStatus').innerText = "Sheets Connected";
+        syncDataFromSheets(false);
       }
       initApp();
     };
@@ -506,6 +525,63 @@
       document.getElementById('m-date').value = new Date().toISOString().split('T')[0];
     }
 
+    function renderAnalyticsCharts() {
+      const ctxDist = document.getElementById('chart-distance');
+      const ctxMonthly = document.getElementById('chart-monthly');
+      if(!ctxDist || !ctxMonthly) return;
+
+      const vehicleNames = vehicles.map(v => v.name);
+      const vehicleKm = vehicles.map(v => journeys.filter(j => j.vehicle === v.name).reduce((sum, j) => sum + Number(j.distance || 0), 0));
+
+      if(chartDistInstance) chartDistInstance.destroy();
+      chartDistInstance = new Chart(ctxDist, {
+        type: 'doughnut',
+        data: {
+          labels: vehicleNames,
+          datasets: [{
+            data: vehicleKm,
+            backgroundColor: ['#f59e0b', '#06b6d4', '#10b981', '#6366f1', '#ec4899']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { family: 'Rajdhani', size: 12 } } } }
+        }
+      });
+
+      const monthsMap = {};
+      journeys.forEach(j => {
+        if(j.date) {
+          const m = j.date.slice(0, 7);
+          monthsMap[m] = (monthsMap[m] || 0) + Number(j.distance || 0);
+        }
+      });
+      const sortedMonths = Object.keys(monthsMap).sort();
+      const monthValues = sortedMonths.map(m => monthsMap[m]);
+
+      if(chartMonthlyInstance) chartMonthlyInstance.destroy();
+      chartMonthlyInstance = new Chart(ctxMonthly, {
+        type: 'bar',
+        data: {
+          labels: sortedMonths.length > 0 ? sortedMonths : ['No Data'],
+          datasets: [{
+            label: 'KM Traveled',
+            data: monthValues.length > 0 ? monthValues : [0],
+            backgroundColor: '#06b6d4',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { family: 'Rajdhani' } }, grid: { color: '#132840' } },
+            y: { ticks: { color: '#94a3b8', font: { family: 'Rajdhani' } }, grid: { color: '#132840' } }
+          }
+        }
+      });
+    }
+
     // JOURNEYS
     function handleJourneySubmit(e) {
       e.preventDefault();
@@ -570,7 +646,7 @@
       alertCustom('Maintenance log saved successfully!');
     }
 
-    // REMINDERS & TYRE
+    // REMINDERS & TYRE WITH DATE PICKER
     function saveReminderEmailSetting() {
       reminderEmail = document.getElementById('custom-reminder-email').value;
       localStorage.setItem('akash_reminder_email', reminderEmail);
@@ -582,14 +658,15 @@
     function renderTyreReminders() {
       const container = document.getElementById('tyre-reminders-container');
       if(!container) return;
+      const todayStr = new Date().toISOString().split('T')[0];
       container.innerHTML = vehicles.map(v => {
-        const lastRefill = tyreData[v.name] ? new Date(tyreData[v.name]) : null;
+        const lastRefillDateStr = tyreData[v.name] || '';
         let statusText = 'Not Logged Yet';
         let badgeColor = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
-        let daysLeft = 15;
-        if(lastRefill) {
-          const diffDays = Math.floor((Date.now() - lastRefill.getTime()) / (1000 * 60 * 60 * 24));
-          daysLeft = Math.max(0, 15 - diffDays);
+        if(lastRefillDateStr) {
+          const lastDate = new Date(lastRefillDateStr);
+          const diffDays = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+          const daysLeft = Math.max(0, 15 - diffDays);
           if(daysLeft === 0) {
             statusText = 'REFILL DUE NOW!';
             badgeColor = 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse';
@@ -605,23 +682,31 @@
               <span class="px-2.5 py-1 rounded-full text-[10px] font-rajdhani font-bold border ${badgeColor}">${statusText}</span>
             </div>
             <div class="text-xs font-rajdhani text-slate-400">Target Email: <span class="text-amber-300 font-semibold">${reminderEmail}</span></div>
-            <button onclick="logTyreRefill('${v.name}')" class="w-full py-2 bg-amber-500/15 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-400 font-orbitron font-bold text-xs uppercase rounded-lg transition-all">Log Tyre Air Refill Done</button>
+            <div>
+              <label class="block text-[10px] font-rajdhani uppercase text-slate-400 mb-1">Refill Date (Select Past or Today):</label>
+              <input type="date" id="tyre-date-${v.id}" value="${lastRefillDateStr || todayStr}" class="w-full bg-[#040b15] border border-[#132840] rounded-lg px-3 py-1.5 text-xs text-slate-100 outline-none mb-2" />
+            </div>
+            <button onclick="logTyreRefill('${v.name}', '${v.id}')" class="w-full py-2 bg-amber-500/15 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-400 font-orbitron font-bold text-xs uppercase rounded-lg transition-all">Log Tyre Air Refill Done</button>
           </div>
         `;
       }).join('');
     }
 
-    function logTyreRefill(vehicleName) {
-      tyreData[vehicleName] = new Date().toISOString();
+    function logTyreRefill(vehicleName, vehicleId) {
+      const dateInput = document.getElementById(`tyre-date-${vehicleId}`).value;
+      if(!dateInput) {
+        alertCustom('Please select a valid date!');
+        return;
+      }
+      tyreData[vehicleName] = dateInput;
       localStorage.setItem('akash_tyre_data', JSON.stringify(tyreData));
       syncToSheets('sync_tyre', tyreData);
       renderTyreReminders();
-      alertCustom(`Tyre air pressure refill logged for ${vehicleName}. 15-day reminder timer reset!`);
+      alertCustom(`Tyre air pressure refill logged for ${vehicleName} on ${dateInput}. 15-day timer reset!`);
     }
 
     // DOC VAULT & DRAG-AND-DROP
     function renderVaults() {
-      // General Vault
       const genContainer = document.getElementById('general-docs-container');
       if(generalDocs.length === 0) {
         genContainer.innerHTML = `<div class="col-span-full text-center py-8 text-xs font-rajdhani text-slate-500 uppercase tracking-widest">No general documents uploaded yet. Drag cards here once added.</div>`;
@@ -642,7 +727,6 @@
         `).join('');
       }
 
-      // Per-Vehicle Vaults
       const vehVaultsContainer = document.getElementById('per-vehicle-vaults-container');
       vehVaultsContainer.innerHTML = vehicles.map(v => {
         const vDocs = vaultDocs.filter(d => d.vehicleId === v.id);
@@ -780,7 +864,6 @@
       localStorage.setItem('akash_general_docs', JSON.stringify(generalDocs));
       localStorage.setItem('akash_vault_docs', JSON.stringify(vaultDocs));
       
-      // Force immediate background push to Google Sheets
       syncToSheets('sync_general_vault', generalDocs);
       syncToSheets('sync_vault', vaultDocs);
 
@@ -805,87 +888,7 @@
       }
     }
 
-    // VEHICLE MANAGEMENT
-    function openAddVehicleModal() {
-      document.getElementById('vehicle-modal-title').innerText = 'Add New Vehicle';
-      document.getElementById('v-name').value = '';
-      document.getElementById('v-sub').value = '';
-      document.getElementById('modal-vehicle').classList.remove('hidden');
-    }
-    function closeVehicleModal() {
-      document.getElementById('modal-vehicle').classList.add('hidden');
-    }
-    function handleSaveVehicle(e) {
-      e.preventDefault();
-      const name = document.getElementById('v-name').value;
-      const category = document.getElementById('v-cat').value;
-      const sub = document.getElementById('v-sub').value;
-      let icon = 'fa-car';
-      if(category === 'bike') icon = 'fa-motorcycle';
-      if(category === 'scooter') icon = 'fa-bicycle';
-      
-      const newV = { id: name.toLowerCase().replace(/\s+/g, '_'), name, category, sublabel: sub, icon, interval: 5000 };
-      vehicles.push(newV);
-      localStorage.setItem('akash_vehicles', JSON.stringify(vehicles));
-      syncToSheets('new_vehicle', newV);
-      closeVehicleModal();
-      initApp();
-      alertCustom(`Vehicle ${name} added successfully!`);
-    }
-
-    // ANALYTICS CHARTS
-    function renderAnalyticsCharts() {
-      const carKm = journeys.filter(j => j.vehicle.toLowerCase().includes('car')).reduce((sum, j) => sum + Number(j.distance || 0), 0);
-      const unicornKm = journeys.filter(j => j.vehicle.toLowerCase().includes('unicorn')).reduce((sum, j) => sum + Number(j.distance || 0), 0);
-      const activaKm = journeys.filter(j => j.vehicle.toLowerCase().includes('activa')).reduce((sum, j) => sum + Number(j.distance || 0), 0);
-
-      const ctxDist = document.getElementById('chart-distance');
-      if(ctxDist) {
-        if(chartDistInstance) chartDistInstance.destroy();
-        chartDistInstance = new Chart(ctxDist, {
-          type: 'doughnut',
-          data: {
-            labels: ['Car', 'Unicorn', 'Activa'],
-            datasets: [{ data: [carKm, unicornKm, activaKm], backgroundColor: ['#f59e0b', '#06b6d4', '#10b981'], borderWidth: 0 }]
-          },
-          options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0', font: { family: 'Rajdhani' } } } } }
-        });
-      }
-
-      const ctxMonthly = document.getElementById('chart-monthly');
-      if(ctxMonthly) {
-        if(chartMonthlyInstance) chartMonthlyInstance.destroy();
-        chartMonthlyInstance = new Chart(ctxMonthly, {
-          type: 'bar',
-          data: {
-            labels: ['Jul', 'Aug', 'Sep 2026'],
-            datasets: [{ label: 'KM Traveled', data: [120, 350, journeys.reduce((s, j) => s + Number(j.distance||0), 0)], backgroundColor: '#06b6d4', borderRadius: 8 }]
-          },
-          options: { responsive: true, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
-        });
-      }
-    }
-
-    // ROUTE PLANNER
-    function calculateRoutePlan() {
-      const stops = document.getElementById('calc-stops').value.split(',').map(s => s.trim()).filter(Boolean);
-      const mileage = Number(document.getElementById('calc-mileage').value) || 15;
-      const fuelPrice = Number(document.getElementById('calc-fuel-price').value) || 102.5;
-      const estDist = stops.length > 1 ? stops.length * 18.5 : 45.0;
-      const fuelNeeded = estDist / mileage;
-      const cost = fuelNeeded * fuelPrice;
-      const resultsDiv = document.getElementById('calc-results');
-      resultsDiv.classList.remove('hidden');
-      resultsDiv.innerHTML = `
-        <div class="text-amber-400 font-bold uppercase">Route Analysis Results:</div>
-        <div>Estimated Total Distance: <span class="text-cyan-400 font-bold">${estDist.toFixed(1)} KM</span> across ${stops.length} stops</div>
-        <div>Estimated Fuel Required: <span class="text-slate-100 font-bold">${fuelNeeded.toFixed(2)} Liters</span></div>
-        <div>Estimated Fuel Expense: <span class="text-emerald-400 font-bold">₹${cost.toFixed(2)}</span></div>
-        <div>Estimated Toll Expense: <span class="text-amber-300 font-bold">₹0.00 (Standard Local Route)</span></div>
-      `;
-    }
-
-    // HISTORY
+    // HISTORY WITH VIEW & EDIT ACTIONS
     function renderHistory() {
       const filterVeh = document.getElementById('filter-vehicle').value;
       const tbody = document.getElementById('history-table-body');
@@ -897,11 +900,70 @@
           <td class="py-3 px-4 text-slate-100">${j.tripName || '-'}</td>
           <td class="py-3 px-4 text-slate-300">${j.startPlace} → ${j.destination}</td>
           <td class="py-3 px-4 text-cyan-400 font-bold">${j.distance} KM</td>
-          <td class="py-3 px-4 text-right">
-            <button onclick="deleteJourney(${j.id}, ${j.rowIndex || -1})" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
+          <td class="py-3 px-4 text-right space-x-2">
+            <button onclick="openViewJourneyModal(${j.id})" title="View Details" class="text-slate-400 hover:text-cyan-400"><i class="fa-solid fa-eye"></i></button>
+            <button onclick="openEditJourneyModal(${j.id})" title="Edit Journey" class="text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button onclick="deleteJourney(${j.id}, ${j.rowIndex || -1})" title="Delete Journey" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
           </td>
         </tr>
       `).join('');
+    }
+
+    function openViewJourneyModal(id) {
+      const j = journeys.find(item => item.id === id);
+      if(!j) return;
+      const content = document.getElementById('view-journey-content');
+      content.innerHTML = `
+        <div><strong class="text-amber-400">Date:</strong> ${j.date}</div>
+        <div><strong class="text-amber-400">Vehicle:</strong> ${j.vehicle}</div>
+        <div><strong class="text-amber-400">Route Name:</strong> ${j.tripName || 'N/A'}</div>
+        <div><strong class="text-amber-400">From:</strong> ${j.startPlace}</div>
+        <div><strong class="text-amber-400">Destination:</strong> ${j.destination}</div>
+        <div><strong class="text-amber-400">Total Distance:</strong> ${j.distance} KM</div>
+        <div><strong class="text-amber-400">Start Odometer:</strong> ${j.startOdo || 'Not Recorded'}</div>
+        <div><strong class="text-amber-400">End Odometer:</strong> ${j.endOdo || 'Not Recorded'}</div>
+      `;
+      document.getElementById('modal-view-journey').classList.remove('hidden');
+    }
+    function closeViewJourneyModal() {
+      document.getElementById('modal-view-journey').classList.add('hidden');
+    }
+
+    function openEditJourneyModal(id) {
+      const j = journeys.find(item => item.id === id);
+      if(!j) return;
+      document.getElementById('edit-j-id').value = j.id;
+      document.getElementById('edit-j-date').value = j.date;
+      const vSelect = document.getElementById('edit-j-vehicle');
+      vSelect.innerHTML = vehicles.map(v => `<option value="${v.name}" ${v.name === j.vehicle ? 'selected' : ''}>${v.name}</option>`).join('');
+      document.getElementById('edit-j-name').value = j.tripName || '';
+      document.getElementById('edit-j-start').value = j.startPlace || '';
+      document.getElementById('edit-j-dest').value = j.destination || '';
+      document.getElementById('edit-j-dist').value = j.distance || '';
+      document.getElementById('modal-edit-journey').classList.remove('hidden');
+    }
+    function closeEditJourneyModal() {
+      document.getElementById('modal-edit-journey').classList.add('hidden');
+    }
+
+    function handleUpdateJourney(e) {
+      e.preventDefault();
+      const id = Number(document.getElementById('edit-j-id').value);
+      const idx = journeys.findIndex(item => item.id === id);
+      if(idx !== -1) {
+        journeys[idx].date = document.getElementById('edit-j-date').value;
+        journeys[idx].vehicle = document.getElementById('edit-j-vehicle').value;
+        journeys[idx].tripName = document.getElementById('edit-j-name').value;
+        journeys[idx].startPlace = document.getElementById('edit-j-start').value.toUpperCase();
+        journeys[idx].destination = document.getElementById('edit-j-dest').value.toUpperCase();
+        journeys[idx].distance = Number(document.getElementById('edit-j-dist').value);
+
+        localStorage.setItem('akash_journeys', JSON.stringify(journeys));
+        syncToSheets('edit_journey', journeys[idx]);
+        closeEditJourneyModal();
+        initApp();
+        alertCustom('Journey updated successfully!');
+      }
     }
 
     function deleteJourney(id, rowIndex) {
