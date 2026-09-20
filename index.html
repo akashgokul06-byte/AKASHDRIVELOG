@@ -172,6 +172,11 @@
                 <div class="flex items-center justify-between"><label class="text-xs font-rajdhani font-bold uppercase text-cyan-400">Intermediate Stops</label><button onclick="addStopInput()" class="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500 hover:text-black border border-cyan-500/50 text-cyan-300 rounded text-[10px] font-orbitron font-bold">+ Add Stop</button></div>
                 <div id="calc-stops-container" class="space-y-2"></div>
               </div>
+              <label class="flex items-center gap-2 cursor-pointer bg-[#06101c] border border-[#132840] rounded-xl px-3 py-3 text-xs font-rajdhani font-bold text-amber-300">
+                <input type="checkbox" id="calc-round-trip" class="w-4 h-4 accent-amber-500" />
+                <span>Round Trip — include a return journey using a different via route</span>
+              </label>
+              <p class="text-[11px] font-rajdhani text-slate-500">Route distances shown here are planning estimates, not live navigation measurements.</p>
               <button onclick="generateMultipleRoutes()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-compass mr-1"></i> Compute Available Routes</button>
               <div id="multi-route-options" class="space-y-3 pt-2"></div>
             </div>
@@ -786,69 +791,125 @@
     function generateMultipleRoutes() {
       const from = document.getElementById('calc-from')?.value.trim() || 'Kadambathur';
       const to = document.getElementById('calc-to')?.value.trim() || 'Chennai';
-      // These controls belong to the Mileage Calculator tab, not the optional
-      // Home route planner. Keep safe defaults here so this button always works.
       const mileage = Number(document.getElementById('calc-mileage')?.value) || 15;
       const fuelPrice = Number(document.getElementById('calc-fuel-price')?.value) || 102.50;
       const isRoundTrip = document.getElementById('calc-round-trip')?.checked || false;
 
+      // These are illustrative planning estimates, not live road-routing results.
       const baseHash = (from + to + calcStops.join('')).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      let baseDist = 32 + (baseHash % 20) + (calcStops.length * 12);
-      if(isRoundTrip) baseDist *= 2;
-
-      const dist1 = baseDist;
-      const dist2 = baseDist + 7.5;
-      const dist3 = baseDist + 15.0;
-
-      const routes = [
-        { id: 1, name: `Direct Highway Route (${calcStops.length} Stops)`, distance: Number(dist1.toFixed(1)), time: isRoundTrip ? '1 hr 40 mins' : '50 mins', via: 'Expressway & Main Lanes' },
-        { id: 2, name: `Bypass & Ring Road Route`, distance: Number(dist2.toFixed(1)), time: isRoundTrip ? '2 hrs 05 mins' : '1 hr 05 mins', via: 'Ring Bypass & Link Roads' },
-        { id: 3, name: `Alternative State Highway`, distance: Number(dist3.toFixed(1)), time: isRoundTrip ? '2 hrs 30 mins' : '1 hr 20 mins', via: 'Connecting State Roads' }
+      const baseDist = 32 + (baseHash % 20) + (calcStops.length * 12);
+      const outbound = [
+        { id: 1, name: 'Direct Highway', distance: Number(baseDist.toFixed(1)), time: '50 mins', via: 'Expressway & Main Lanes' },
+        { id: 2, name: 'Bypass & Ring Road', distance: Number((baseDist + 7.5).toFixed(1)), time: '1 hr 05 mins', via: 'Ring Bypass & Link Roads' },
+        { id: 3, name: 'Alternative State Highway', distance: Number((baseDist + 15).toFixed(1)), time: '1 hr 20 mins', via: 'Connecting State Roads' }
       ];
+      const inbound = [
+        { id: 1, name: 'Return via Inner Bypass', distance: Number((baseDist + 5.2).toFixed(1)), time: '1 hr', via: 'Inner Bypass & Local Connectors' },
+        { id: 2, name: 'Return via Outer Ring Road', distance: Number((baseDist + 10.4).toFixed(1)), time: '1 hr 15 mins', via: 'Outer Ring Road & Service Lanes' },
+        { id: 3, name: 'Return via State Highway', distance: Number((baseDist + 2.8).toFixed(1)), time: '55 mins', via: 'State Highway & Town Roads' }
+      ];
+
+      let options = [];
+      if (isRoundTrip) {
+        // Pair each outbound choice with a different return route so the return leg
+        // is explicitly planned through another via option.
+        options = outbound.map((out, i) => {
+          const back = inbound[(i + 1) % inbound.length];
+          return {
+            id: i + 1,
+            name: `${out.name} outbound + ${back.name}`,
+            distance: Number((out.distance + back.distance).toFixed(1)),
+            outbound: out,
+            inbound: back,
+            via: `OUT: ${out.via} | RETURN: ${back.via}`,
+            time: `${out.time} outbound + ${back.time} return`
+          };
+        });
+      } else {
+        options = outbound.map(r => ({
+          ...r,
+          name: `${r.name} Route`,
+          via: r.via,
+          outbound: r,
+          inbound: null
+        }));
+      }
 
       const container = document.getElementById('multi-route-options');
       if (!container) {
         alertCustom('Route results area is not available. Please reload the page.');
         return;
       }
-      container.innerHTML = routes.map(r => {
+
+      container.innerHTML = options.map(r => {
         const fuelCost = (r.distance / mileage) * fuelPrice;
-        const toll = r.id === 1 ? 45 : (r.id === 2 ? 20 : 0);
+        const toll = isRoundTrip ? (r.id === 1 ? 65 : (r.id === 2 ? 45 : 30)) : (r.id === 1 ? 45 : (r.id === 2 ? 20 : 0));
         const total = fuelCost + toll;
+        const routePayload = JSON.stringify({
+          from, to, distance: r.distance, routeName: r.name, roundTrip: isRoundTrip,
+          via: r.via
+        }).replace(/</g, '\\u003c');
         return `
           <div class="bg-[#06101c] border border-[#132840] p-3.5 rounded-xl space-y-2 hover:border-amber-500/50 transition-all">
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center gap-2">
               <div class="font-orbitron text-xs font-bold text-amber-400">${r.name}</div>
-              <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-rajdhani font-bold">${r.distance} KM (${r.time})</span>
+              <span class="shrink-0 px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-rajdhani font-bold">${r.distance.toFixed(1)} KM · ${r.time}</span>
             </div>
-            <div class="text-[11px] font-rajdhani text-slate-300 flex justify-between">
-              <span>Via: ${r.via}</span>
-              <span>Est. Cost: <strong class="text-emerald-400">₹${total.toFixed(0)}</strong> (Fuel: ₹${fuelCost.toFixed(0)} + Toll: ₹${toll})</span>
+            <div class="text-[11px] font-rajdhani text-slate-300">
+              <div>Via: ${r.via}</div>
+              <div class="mt-1">Est. Cost: <strong class="text-emerald-400">₹${total.toFixed(0)}</strong> (Fuel: ₹${fuelCost.toFixed(0)} + Toll estimate: ₹${toll})</div>
             </div>
-            <button onclick="selectAndApplyRoute('${from}', '${to}', ${r.distance}, '${r.name}')" class="w-full py-2 bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
-              <i class="fa-solid fa-circle-check mr-1"></i> Select Route & Auto-Apply KM (${r.distance} KM)
+            <button onclick='selectAndApplyRouteData(${routePayload})' class="w-full py-2 bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
+              <i class="fa-solid fa-circle-check mr-1"></i> Select ${isRoundTrip ? 'Round Trip' : 'Route'} & Apply ${r.distance.toFixed(1)} KM
             </button>
           </div>
         `;
       }).join('');
 
-      if(document.getElementById('route-planner-toggle')?.checked) {
-        if(!dashboardMapInstance) initMaps();
+      if (document.getElementById('route-planner-toggle')?.checked) {
+        if (!dashboardMapInstance) initMaps();
         setTimeout(() => {
-          if(!dashboardMapInstance) return;
+          if (!dashboardMapInstance || typeof L === 'undefined') return;
           routePolylines.forEach(p => dashboardMapInstance.removeLayer(p));
           routePolylines = [];
-          const latOffset = (Math.random() - 0.5) * 0.04;
-          const latlngs1 = [[13.15, 79.91], [13.12 + latOffset, 79.98], [13.08, 80.27]];
-          const latlngs2 = [[13.15, 79.91], [13.19 + latOffset, 79.96], [13.08, 80.27]];
-          const p1 = L.polyline(latlngs1, {color: '#f59e0b', weight: 5}).addTo(dashboardMapInstance).bindPopup('Route 1: Direct Highway');
-          const p2 = L.polyline(latlngs2, {color: '#06b6d4', weight: 4, dashArray: '5, 5'}).addTo(dashboardMapInstance).bindPopup('Route 2: Bypass Route');
+          const latlngs1 = [[13.15, 79.91], [13.12, 79.98], [13.08, 80.27]];
+          const latlngs2 = [[13.08, 80.27], [13.19, 79.96], [13.15, 79.91]];
+          const p1 = L.polyline(latlngs1, {color: '#f59e0b', weight: 5}).addTo(dashboardMapInstance).bindPopup('Outbound: selected route estimate');
+          const p2 = L.polyline(latlngs2, {color: '#06b6d4', weight: 4, dashArray: '5, 5'}).addTo(dashboardMapInstance).bindPopup(isRoundTrip ? 'Return: alternate via route estimate' : 'Alternative route estimate');
           routePolylines.push(p1, p2);
           dashboardMapInstance.fitBounds(p1.getBounds());
           const badge = document.getElementById('map-status-badge');
-          if(badge) badge.innerText = 'Route Ready';
+          if (badge) badge.innerText = isRoundTrip ? 'Round Trip Options' : 'Route Options';
         }, 350);
       }
+    }
+
+    function selectAndApplyRouteData(data) {
+      const from = data.from || '';
+      const to = data.to || '';
+      const distance = Number(data.distance) || 0;
+      const routeName = data.routeName || 'Selected Route';
+
+      document.getElementById('j-start').value = from.toUpperCase();
+      document.getElementById('j-dest').value = to.toUpperCase();
+      document.getElementById('j-name').value = routeName;
+      const distanceField = document.getElementById('j-dist');
+      distanceField.value = distance.toFixed(1);
+      document.getElementById('j-start-odo').value = '';
+      document.getElementById('j-end-odo').value = '';
+      document.getElementById('j-round-trip').checked = false;
+      const localBox = document.getElementById('j-local-drive');
+      if (localBox) localBox.checked = false;
+      toggleLocalDrive();
+      updateJourneyDistancePreview();
+
+      const status = document.getElementById('selected-route-status');
+      if (status) {
+        status.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Selected: <strong>${routeName} (${distance.toFixed(1)} KM total${data.roundTrip ? ', return via a different route' : ''})</strong> — total distance filled into <strong>Total Distance (KM)</strong> below.`;
+      }
+      distanceField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => { distanceField.focus(); distanceField.select(); }, 450);
+      alertCustom(`Route selected! ${distance.toFixed(1)} KM total has been filled into Total Distance (KM).`);
     }
 
     function selectAndApplyRoute(from, to, distance, routeName) {
