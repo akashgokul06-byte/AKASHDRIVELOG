@@ -155,7 +155,7 @@
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 class="font-orbitron text-base font-bold text-amber-400 flex items-center gap-2"><i class="fa-solid fa-route"></i><span>OPTIONAL ROUTE PLANNER</span></h3>
-              <p class="text-xs font-rajdhani text-slate-400 mt-1">Use either MAP ROUTE or MANUAL ENTRY. Route options are for journey planning; Navigate opens Google Maps separately.</p>
+              <p class="text-xs font-rajdhani text-slate-400 mt-1">Route planning is optional. You can manually enter KM or use Start/End Odometer below without opening the map.</p>
             </div>
             <label class="flex items-center gap-2 cursor-pointer bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs font-rajdhani font-bold text-cyan-300">
               <input type="checkbox" id="route-planner-toggle" onchange="toggleRoutePlanner()" class="w-4 h-4 accent-cyan-500" />
@@ -171,20 +171,6 @@
               <div class="space-y-2">
                 <div class="flex items-center justify-between"><label class="text-xs font-rajdhani font-bold uppercase text-cyan-400">Intermediate Stops</label><button onclick="addStopInput()" class="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500 hover:text-black border border-cyan-500/50 text-cyan-300 rounded text-[10px] font-orbitron font-bold">+ Add Stop</button></div>
                 <div id="calc-stops-container" class="space-y-2"></div>
-              </div>
-              <label class="flex items-center gap-2 cursor-pointer bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs font-rajdhani font-bold text-amber-300">
-                <input type="checkbox" id="calc-route-round-trip" class="w-4 h-4 accent-amber-500" onchange="toggleReturnRoutePlanner()" />
-                <span>Round Trip — select outbound + separate return route</span>
-              </label>
-              <div id="return-route-planner-input" class="hidden bg-[#06101c] border border-cyan-500/20 rounded-xl p-3 space-y-2">
-                <div class="flex items-center justify-between gap-3">
-                  <div>
-                    <div class="text-xs font-orbitron font-bold text-cyan-300">RETURN VIA / INTERMEDIATE STOPS</div>
-                    <div class="text-[10px] font-rajdhani text-slate-500 mt-1">Example: Kuthambakkam. This can be completely different from outbound Via.</div>
-                  </div>
-                  <button onclick="addStopInput('return')" class="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500 hover:text-black border border-cyan-500/50 text-cyan-300 rounded text-[10px] font-orbitron font-bold">+ Add Return Stop</button>
-                </div>
-                <div id="calc-return-stops-container" class="space-y-2"></div>
               </div>
               <button onclick="generateMultipleRoutes()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-compass mr-1"></i> Compute Available Routes</button>
               <div id="multi-route-options" class="space-y-3 pt-2"></div>
@@ -208,12 +194,18 @@
             <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Date</label><input type="date" id="j-date" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
             <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Vehicle Mode</label><select id="j-vehicle" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none"></select></div>
             <div class="sm:col-span-2"><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Trip / Route Name</label><input type="text" id="j-name" placeholder="e.g. Office Commute" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
-            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Place</label><input type="text" id="j-start" placeholder="e.g. Kadambathur" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
-            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Destination Place</label><input type="text" id="j-dest" placeholder="e.g. Chennai" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
             <div class="sm:col-span-2">
-              <label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Via / Intermediate Stops <span class="text-cyan-400 normal-case">— automatically filled from selected route</span></label>
-              <input type="text" id="j-via" placeholder="e.g. Vellavedu, Poonamallee" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-cyan-500 outline-none" />
+              <label class="flex items-center gap-3 cursor-pointer bg-gradient-to-r from-amber-500/10 to-cyan-500/5 border border-amber-500/40 rounded-xl p-3">
+                <input type="checkbox" id="j-local-drive" onchange="toggleLocalDrive()" class="w-5 h-5 accent-amber-500" />
+                <span class="flex-1">
+                  <strong class="block text-[11px] font-orbitron tracking-widest text-amber-300">LOCAL DRIVE</strong>
+                  <small class="block text-xs font-rajdhani text-slate-400 mt-1">Village travel · fixed distance of 1 KM</small>
+                </span>
+                <strong class="font-orbitron text-sm text-amber-300">+1 KM</strong>
+              </label>
             </div>
+            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Place</label><input type="text" id="j-start" placeholder="e.g. Kadambathur" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
+            <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Destination Place</label><input type="text" id="j-dest" placeholder="e.g. Chennai" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:border-amber-500 outline-none" /></div>
             <div>
   <label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">
     Total Distance (KM)
@@ -235,12 +227,7 @@
             </div>
             <div class="sm:col-span-2 flex items-center justify-between gap-3 mt-2">
               <div id="journey-distance-status" class="text-xs font-rajdhani font-bold text-cyan-300">Distance ready for manual entry.</div>
-              <div class="flex flex-wrap gap-2 justify-end">
-                <button type="button" onclick="navigateCurrentJourney()" class="px-5 py-3 bg-cyan-500/15 hover:bg-cyan-500 hover:text-black border border-cyan-500/50 text-cyan-300 font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl transition-all">
-                  <i class="fa-solid fa-location-arrow mr-2"></i> Navigate
-                </button>
-                <button type="submit" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-plus mr-1"></i> Save Journey</button>
-              </div>
+              <button type="submit" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"><i class="fa-solid fa-plus mr-1"></i> Save Journey</button>
             </div>
           </form>
         </div>
@@ -329,7 +316,7 @@
           </div>
         </div>
 
-        <div id="per-vehicle-vaults-container" class="grid grid-cols-1 gap-5 items-start"></div>
+        <div id="per-vehicle-vaults-container" class="space-y-6"></div>
       </div>
 
       <!-- ANALYTICS TAB -->
@@ -441,7 +428,6 @@
         <div class="grid grid-cols-2 gap-3">
           <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Start Place</label><input type="text" id="edit-j-start" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
           <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Destination</label><input type="text" id="edit-j-dest" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
-          <div class="sm:col-span-2"><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Via / Intermediate Stops</label><input type="text" id="edit-j-via" placeholder="e.g. Vellavedu, Poonamallee" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
         </div>
         <div><label class="block text-xs font-rajdhani font-bold uppercase text-slate-400 mb-1">Distance (KM)</label><input type="number" step="0.1" id="edit-j-dist" required class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-sm text-slate-100 outline-none" /></div>
         <div class="grid grid-cols-2 gap-3">
@@ -515,43 +501,13 @@
 
   <!-- CUSTOM WALLPAPER MODAL -->
   <div id="modal-wallpaper" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#091524] border border-[#132840] w-full max-w-lg p-6 rounded-2xl shadow-2xl space-y-4">
-      <div class="flex justify-between items-center">
-        <h3 class="font-orbitron text-base font-bold text-amber-400">Custom Hero Wallpaper</h3>
-        <button onclick="closeWallpaperModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
-
-      <div class="bg-black/30 border border-[#132840] rounded-xl p-3">
-        <p class="text-xs font-rajdhani text-slate-200 font-bold">Use an image from almost any online source</p>
-        <p class="text-[11px] font-rajdhani text-slate-400 mt-1">Paste a direct image URL, an Unsplash/Pexels image URL, or a Google Drive sharing link.</p>
-      </div>
-
-      <div>
-        <label class="block text-[11px] font-rajdhani font-bold uppercase tracking-wider text-slate-400 mb-1.5">Image / Wallpaper Link</label>
-        <input type="url" id="wallpaper-url-input" autocomplete="off" placeholder="https://... or Google Drive share link" class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-3 text-xs text-slate-100 focus:border-amber-500 outline-none" />
-      </div>
-
-      <div class="grid grid-cols-2 gap-2 text-[10px] font-rajdhani">
-        <button type="button" onclick="setWallpaperExample('https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1920&auto=format&fit=crop')" class="px-3 py-2 rounded-lg border border-[#132840] text-slate-300 hover:border-amber-500 hover:text-amber-300">USE ONLINE EXAMPLE</button>
-        <button type="button" onclick="document.getElementById('wallpaper-url-input').focus()" class="px-3 py-2 rounded-lg border border-[#132840] text-slate-300 hover:border-amber-500 hover:text-amber-300">PASTE DRIVE LINK</button>
-      </div>
-
-      <p class="text-[10px] leading-relaxed text-slate-500 font-rajdhani">
-        Google Drive images must be shared as <b class="text-slate-300">Anyone with the link → Viewer</b>. Regular website links need to point to the image itself (for example .jpg, .jpeg, .png, .webp, or a direct image CDN URL), not an ordinary webpage containing the image.
-      </p>
-
-      <div id="wallpaper-preview-wrap" class="hidden border border-[#132840] rounded-xl overflow-hidden bg-black">
-        <img id="wallpaper-preview" class="w-full h-40 object-cover" alt="Wallpaper preview" />
-      </div>
-
-      <div class="flex flex-wrap justify-between gap-2 pt-2">
-        <button onclick="resetWallpaper()" class="px-4 py-2 bg-red-950/50 border border-red-500/40 text-red-300 hover:text-white rounded-xl text-xs font-orbitron font-bold">
-          <i class="fa-solid fa-rotate-left mr-1"></i> Reset Default
-        </button>
-        <div class="flex gap-2 ml-auto">
-          <button onclick="closeWallpaperModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-orbitron font-bold">Cancel</button>
-          <button onclick="saveWallpaperUrl()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black rounded-xl text-xs font-orbitron font-bold">Apply Wallpaper</button>
-        </div>
+    <div class="bg-[#091524] border border-[#132840] w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
+      <div class="flex justify-between items-center"><h3 class="font-orbitron text-base font-bold text-amber-400">Custom Hero Wallpaper</h3><button onclick="closeWallpaperModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+      <p class="text-xs font-rajdhani text-slate-300">Paste an image URL to set as your stunning hero landing background.</p>
+      <input type="url" id="wallpaper-url-input" placeholder="https://images.unsplash.com/photo-..." class="w-full bg-[#06101c] border border-[#132840] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:border-amber-500 outline-none" />
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeWallpaperModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-orbitron font-bold">Cancel</button>
+        <button onclick="saveWallpaperUrl()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black rounded-xl text-xs font-orbitron font-bold">Apply Wallpaper</button>
       </div>
     </div>
   </div>
@@ -633,7 +589,6 @@
       renderHistory();
       renderAnalyticsCharts();
       renderStopInputs();
-      renderStopInputs('return');
       const routeToggle = document.getElementById('route-planner-toggle');
       if(routeToggle) routeToggle.checked = false;
       const routePanel = document.getElementById('optional-route-planner');
@@ -808,562 +763,98 @@
     }
 
     // MULTI-STOP & LIVE ROUTE PLANNER ON HOME TAB
-    // Planning uses the app's old route-option method. Google Maps is ONLY
-    // for navigation after a route is selected. Outbound and return KM are
-    // calculated separately because one-way roads can make the return route different.
     let calcStops = [];
-    let returnCalcStops = [];
-    let selectedOutboundRouteIndex = null;
-    let selectedReturnRouteIndex = null;
-
-    function resetRoundTripRouteSelections() {
-      selectedOutboundRouteIndex = null;
-      selectedReturnRouteIndex = null;
+    function addStopInput() {
+      calcStops.push('');
+      renderStopInputs();
     }
-
-    function addStopInput(direction = 'outbound') {
-      if(direction === 'return') returnCalcStops.push('');
-      else calcStops.push('');
-      renderStopInputs(direction);
+    function removeStopInput(index) {
+      calcStops.splice(index, 1);
+      renderStopInputs();
     }
-
-    function removeStopInput(index, direction = 'outbound') {
-      if(direction === 'return') returnCalcStops.splice(index, 1);
-      else calcStops.splice(index, 1);
-      renderStopInputs(direction);
-    }
-
-    function renderStopInputs(direction = 'outbound') {
-      const containerId = direction === 'return' ? 'calc-return-stops-container' : 'calc-stops-container';
-      const container = document.getElementById(containerId);
+    function renderStopInputs() {
+      const container = document.getElementById('calc-stops-container');
       if(!container) return;
-      const values = direction === 'return' ? returnCalcStops : calcStops;
-      const prefix = direction === 'return' ? 'returnCalcStops' : 'calcStops';
-
-      container.innerHTML = values.map((stopVal, idx) => `
+      container.innerHTML = calcStops.map((stopVal, idx) => `
         <div class="flex gap-2 items-center">
-          <input type="text" value="${escapeHtml(stopVal)}"
-            onchange="${prefix}[${idx}]=this.value"
-            placeholder="${direction === 'return' ? `Return Stop ${idx + 1}` : `Stop ${idx + 1}`} Place"
-            class="flex-1 bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs text-slate-100 outline-none" />
-          <button onclick="removeStopInput(${idx}, '${direction}')"
-            class="px-2.5 py-2 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-xl text-xs">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+          <input type="text" value="${stopVal}" onchange="calcStops[${idx}]=this.value" placeholder="Stop ${idx + 1} Place e.g. Poonamallee" class="flex-1 bg-[#06101c] border border-[#132840] rounded-xl px-3 py-2 text-xs text-slate-100 outline-none" />
+          <button onclick="removeStopInput(${idx})" class="px-2.5 py-2 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-xl text-xs"><i class="fa-solid fa-trash"></i></button>
         </div>
       `).join('');
     }
 
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
+    function generateMultipleRoutes() {
+      const from = document.getElementById('calc-from')?.value.trim() || 'Kadambathur';
+      const to = document.getElementById('calc-to')?.value.trim() || 'Chennai';
+      // These controls belong to the Mileage Calculator tab, not the optional
+      // Home route planner. Keep safe defaults here so this button always works.
+      const mileage = Number(document.getElementById('calc-mileage')?.value) || 15;
+      const fuelPrice = Number(document.getElementById('calc-fuel-price')?.value) || 102.50;
+      const isRoundTrip = document.getElementById('calc-round-trip')?.checked || false;
 
-    async function geocodePlaceDirect(place) {
-      const q = String(place || '').trim();
-      if(!q) throw new Error('A place is missing.');
-      const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=in&q=' + encodeURIComponent(q + ', India');
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      if(!res.ok) throw new Error(`Geocoding failed (${res.status}).`);
-      const data = await res.json();
-      if(!Array.isArray(data) || !data.length) throw new Error(`Could not find: ${q}`);
-      return { lat: Number(data[0].lat), lon: Number(data[0].lon), display: data[0].display_name || q };
-    }
+      const baseHash = (from + to + calcStops.join('')).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      let baseDist = 32 + (baseHash % 20) + (calcStops.length * 12);
+      if(isRoundTrip) baseDist *= 2;
 
-    async function computeOSRMRouteVariant(coords, excludeClass = '') {
-      const coordString = coords.map(c => `${c.lon},${c.lat}`).join(';');
-      const params = new URLSearchParams();
-      params.set('alternatives', '3');
-      params.set('overview', 'full');
-      params.set('geometries', 'geojson');
-      params.set('steps', 'false');
-      if(excludeClass) params.set('exclude', excludeClass);
+      const dist1 = baseDist;
+      const dist2 = baseDist + 7.5;
+      const dist3 = baseDist + 15.0;
 
-      const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?${params.toString()}`;
-      const res = await fetch(url);
-      if(!res.ok) throw new Error(`OSRM routing failed (${res.status}).`);
-      const data = await res.json();
-      if(data.code !== 'Ok' || !Array.isArray(data.routes) || !data.routes.length) {
-        throw new Error('OSRM could not find a drivable route for these places.');
-      }
-      return data.routes;
-    }
-
-    function makeOSRMRoutesUnique(routes) {
-      const unique = [];
-      routes.forEach(route => {
-        const duplicate = unique.some(existing =>
-          Math.abs(Number(existing.distance) - Number(route.distance)) < 0.05 &&
-          Math.abs(Number(existing.durationSeconds) - Number(route.durationSeconds)) < 5
-        );
-        if(!duplicate) unique.push(route);
-      });
-      return unique.slice(0, 3);
-    }
-
-    async function computeOSRMDirect(from, to, stops) {
-      const places = [from, ...(stops || []), to];
-      const coords = [];
-      for(const place of places) coords.push(await geocodePlaceDirect(place));
-
-      // IMPORTANT: Keep all Via points in ONE OSRM request. OSRM's route API
-      // accepts coordinates in the supplied order and can return alternatives
-      // for the complete route, rather than combining unrelated leg alternatives.
-      const candidates = [];
-
-      const normalRoutes = await computeOSRMRouteVariant(coords, '');
-      normalRoutes.forEach((route, idx) => candidates.push({
-        source: idx === 0 ? 'Fastest / Recommended Route' : `Alternative Route ${idx + 1}`,
-        route
-      }));
-
-      // If OSRM does not provide enough distinct alternatives, ask for real
-      // alternative road strategies. These are still OSRM road routes, not fake
-      // distances: one avoids motorways and one avoids toll roads.
-      if(candidates.length < 3) {
-        try {
-          const noMotorway = await computeOSRMRouteVariant(coords, 'motorway');
-          noMotorway.forEach(route => candidates.push({ source: 'Alternative — Avoid Motorways', route }));
-        } catch(e) { console.warn('OSRM motorway-avoid alternative unavailable:', e); }
-      }
-      if(candidates.length < 3) {
-        try {
-          const noToll = await computeOSRMRouteVariant(coords, 'toll');
-          noToll.forEach(route => candidates.push({ source: 'Alternative — Avoid Tolls', route }));
-        } catch(e) { console.warn('OSRM toll-avoid alternative unavailable:', e); }
-      }
-
-      const unique = makeOSRMRoutesUnique(candidates.map(item => ({
-        ...item.route,
-        name: item.source
-      })));
-
-      return unique.map((route, idx) => ({
-        id: idx + 1,
-        name: idx === 0 ? 'Fastest / Recommended Route' : (route.name || `Alternative Route ${idx + 1}`),
-        distance: Number(route.distance || 0) / 1000,
-        time: formatRouteDuration(route.duration),
-        via: (stops || []).length ? stops.join(' → ') : 'Direct route',
-        geometry: route.geometry || null,
-        durationSeconds: Number(route.duration || 0)
-      }));
-    }
-    function formatRouteDuration(seconds) {
-      const mins = Math.max(1, Math.round(Number(seconds || 0) / 60));
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      return h ? `${h} hr ${String(m).padStart(2,'0')} mins` : `${m} mins`;
-    }
-
-    async function computeOSRMViaBackend(from, to, stops) {
-      if(!sheetsWebhookUrl) return null;
-      const params = new URLSearchParams();
-      params.set('action', 'osrm_route');
-      params.set('from', from);
-      params.set('to', to);
-      params.set('stops', JSON.stringify(stops || []));
-      const url = sheetsWebhookUrl + (sheetsWebhookUrl.includes('?') ? '&' : '?') + params.toString();
-      const res = await fetch(url);
-      if(!res.ok) throw new Error(`Routing service failed (${res.status}).`);
-      const data = await res.json();
-      if(data.status !== 'success') throw new Error(data.error || 'Routing service could not calculate the route.');
-      return Array.isArray(data.routes) ? data.routes : [];
-    }
-
-    async function getOSRMRoutes(from, to, stops) {
-      try {
-        const backendRoutes = await computeOSRMViaBackend(from, to, stops);
-        if(backendRoutes && backendRoutes.length) return backendRoutes;
-      } catch(err) {
-        console.warn('Backend OSRM route failed; trying direct OSRM fallback.', err);
-      }
-      return await computeOSRMDirect(from, to, stops);
-    }
-
-    function toggleReturnRoutePlanner() {
-      const checked = !!document.getElementById('calc-route-round-trip')?.checked;
-      const panel = document.getElementById('return-route-planner-input');
-      if(panel) panel.classList.toggle('hidden', !checked);
-      if(!checked) {
-        returnCalcStops = [];
-        renderStopInputs('return');
-      }
-    }
-
-    async function generateMultipleRoutes() {
-      const from = document.getElementById('calc-from')?.value.trim() || '';
-      const to = document.getElementById('calc-to')?.value.trim() || '';
-      const roundTrip = !!document.getElementById('calc-route-round-trip')?.checked;
-      const stops = calcStops.map(s => String(s || '').trim()).filter(Boolean);
-      const returnStops = returnCalcStops.map(s => String(s || '').trim()).filter(Boolean);
-
-      if(stops.length > 10 || returnStops.length > 10) {
-        alertCustom('OSRM routing supports a maximum of 10 Via stops per direction in this setup.');
-        return;
-      }
-
-      if(!from || !to) {
-        alertCustom('Please enter both From Place and Destination Place.');
-        return;
-      }
+      const routes = [
+        { id: 1, name: `Direct Highway Route (${calcStops.length} Stops)`, distance: Number(dist1.toFixed(1)), time: isRoundTrip ? '1 hr 40 mins' : '50 mins', via: 'Expressway & Main Lanes' },
+        { id: 2, name: `Bypass & Ring Road Route`, distance: Number(dist2.toFixed(1)), time: isRoundTrip ? '2 hrs 05 mins' : '1 hr 05 mins', via: 'Ring Bypass & Link Roads' },
+        { id: 3, name: `Alternative State Highway`, distance: Number(dist3.toFixed(1)), time: isRoundTrip ? '2 hrs 30 mins' : '1 hr 20 mins', via: 'Connecting State Roads' }
+      ];
 
       const container = document.getElementById('multi-route-options');
-      if(!container) return;
-
-      const mileage = Number(document.getElementById('calc-mileage')?.value) || 15;
-      const fuelPrice = Number(document.getElementById('calc-fuel-price')?.value) || 102.50;
-      const button = document.querySelector('button[onclick="generateMultipleRoutes()"]');
-      if(button) { button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Calculating real road routes...'; }
-      container.innerHTML = `<div class="bg-[#06101c] border border-cyan-500/30 rounded-xl p-5 text-center text-cyan-300 text-sm font-rajdhani"><i class="fa-solid fa-route fa-spin mr-2"></i> Finding real road routes using OpenStreetMap/OSRM...</div>`;
-
-      selectedOutboundRouteIndex = null;
-      selectedReturnRouteIndex = null;
-
-      try {
-        // OSRM is used ONLY for route calculation. Google Maps remains the navigation engine.
-        const outboundRoutes = await getOSRMRoutes(from, to, stops);
-        let returnRoutes = [];
-        if(roundTrip) returnRoutes = await getOSRMRoutes(to, from, returnStops);
-
-        window.currentComputedRoutes = outboundRoutes;
-        window.currentReturnRoutes = returnRoutes;
-        window.currentComputedRouteInput = { from, to, stops, returnStops, roundTrip };
-
-        const routeCard = (r, idx, direction) => {
-          const isOutbound = direction === 'outbound';
-          const via = isOutbound ? stops : returnStops;
-          return `
-            <div id="${direction}-route-card-${idx}"
-                 class="bg-[#06101c] border border-[#132840] p-3.5 rounded-xl space-y-2 hover:border-amber-500/50 transition-all">
-              <div class="flex justify-between items-center gap-3">
-                <div class="font-orbitron text-xs font-bold ${isOutbound ? 'text-amber-400' : 'text-cyan-300'}">${escapeHtml(r.name)}</div>
-                <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-rajdhani font-bold whitespace-nowrap">
-                  ${Number(r.distance).toFixed(1)} KM · ${escapeHtml(r.time)}
-                </span>
-              </div>
-              <div class="text-[11px] font-rajdhani text-slate-300">
-                Via: ${escapeHtml(via.length ? via.join(' → ') : 'Direct route')}
-              </div>
-              <div class="text-[11px] font-rajdhani text-slate-300">
-                OSRM road distance · Est. Fuel Cost: <strong class="text-emerald-400">₹${((Number(r.distance) / mileage) * fuelPrice).toFixed(0)}</strong>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button onclick="${isOutbound ? `selectOutboundRoute(${idx})` : `selectReturnRoute(${idx})`}" class="w-full py-2 bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
-                  <i class="fa-solid fa-circle-check mr-1"></i>${isOutbound ? 'SELECT OUTBOUND' : 'SELECT RETURN'} — ${Number(r.distance).toFixed(1)} KM
-                </button>
-                <button onclick="navigatePlannedRoute(${idx}, '${direction}')" class="w-full py-2 bg-cyan-500/15 hover:bg-cyan-500 hover:text-black border border-cyan-500/40 text-cyan-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
-                  <i class="fa-solid fa-location-arrow mr-1"></i> NAVIGATE IN GOOGLE MAPS
-                </button>
-              </div>
-            </div>`;
-        };
-
-        let outboundHtml = `
-          <div class="mb-3">
-            <div class="font-orbitron text-sm font-bold text-amber-400">OUTBOUND ROUTE — ${escapeHtml(from)} → ${escapeHtml(to)}</div>
-            <div class="text-[10px] font-rajdhani text-slate-400 mt-1">Real road distance calculated by OSRM. Navigation opens Google Maps.</div>
-          </div>
-          ${outboundRoutes.map((r, i) => routeCard(r, i, 'outbound')).join('')}`;
-
-        let returnHtml = '';
-        if(roundTrip) {
-          returnHtml = `
-            <div class="mt-6 pt-5 border-t border-amber-500/20">
-              <div class="mb-3">
-                <div class="font-orbitron text-sm font-bold text-cyan-300">RETURN ROUTE — ${escapeHtml(to)} → ${escapeHtml(from)}</div>
-                <div class="text-[10px] font-rajdhani text-slate-400 mt-1">Return route is calculated independently with its own Via stops.</div>
-              </div>
-              <div class="space-y-3">${returnRoutes.map((r, i) => routeCard(r, i, 'return')).join('')}</div>
-              <div id="roundtrip-selection-summary" class="mt-4 bg-[#06101c] border border-amber-500/30 rounded-xl p-4 text-center">
-                <div class="text-xs font-rajdhani text-slate-400">Select <strong class="text-amber-300">one outbound</strong> and <strong class="text-cyan-300">one return</strong> route.</div>
-              </div>
-            </div>`;
-        }
-
-        container.innerHTML = `<div class="space-y-3">${outboundHtml}</div>${returnHtml}`;
-        if(dashboardMapInstance && outboundRoutes.length) drawOSRMRoutesOnMap(outboundRoutes);
-        const badge = document.getElementById('map-status-badge');
-        if(badge) badge.innerText = roundTrip ? 'Select Outbound + Return' : `${outboundRoutes.length} Real Routes`;
-      } catch(err) {
-        console.error(err);
-        container.innerHTML = `<div class="bg-rose-500/10 border border-rose-500/30 rounded-xl p-5 text-center text-rose-300 text-sm font-rajdhani">${escapeHtml(err.message || 'Unable to calculate route. Please check the place names and try again.')}</div>`;
-        alertCustom(err.message || 'Unable to calculate the route.');
-      } finally {
-        if(button) { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-compass mr-1"></i> Compute Available Routes'; }
+      if (!container) {
+        alertCustom('Route results area is not available. Please reload the page.');
+        return;
       }
-    }
-
-    function updateRoundTripSelectionSummary() {
-      const box = document.getElementById('roundtrip-selection-summary');
-      if(!box) return;
-
-      const outRoute = window.currentComputedRoutes?.[selectedOutboundRouteIndex];
-      const retRoute = window.currentReturnRoutes?.[selectedReturnRouteIndex];
-
-      if(!outRoute || !retRoute) {
-        box.innerHTML = `
-          <div class="text-xs font-rajdhani text-slate-400">
-            Select <strong class="text-amber-300">one outbound</strong> and <strong class="text-cyan-300">one return</strong> route.
+      container.innerHTML = routes.map(r => {
+        const fuelCost = (r.distance / mileage) * fuelPrice;
+        const toll = r.id === 1 ? 45 : (r.id === 2 ? 20 : 0);
+        const total = fuelCost + toll;
+        return `
+          <div class="bg-[#06101c] border border-[#132840] p-3.5 rounded-xl space-y-2 hover:border-amber-500/50 transition-all">
+            <div class="flex justify-between items-center">
+              <div class="font-orbitron text-xs font-bold text-amber-400">${r.name}</div>
+              <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-rajdhani font-bold">${r.distance} KM (${r.time})</span>
+            </div>
+            <div class="text-[11px] font-rajdhani text-slate-300 flex justify-between">
+              <span>Via: ${r.via}</span>
+              <span>Est. Cost: <strong class="text-emerald-400">₹${total.toFixed(0)}</strong> (Fuel: ₹${fuelCost.toFixed(0)} + Toll: ₹${toll})</span>
+            </div>
+            <button onclick="selectAndApplyRoute('${from}', '${to}', ${r.distance}, '${r.name}')" class="w-full py-2 bg-amber-500/20 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-amber-300 font-orbitron font-bold text-[10px] uppercase rounded-lg transition-all">
+              <i class="fa-solid fa-circle-check mr-1"></i> Select Route & Auto-Apply KM (${r.distance} KM)
+            </button>
           </div>
-          ${outRoute ? `<div class="mt-2 text-xs text-amber-300">Outbound selected: ${escapeHtml(outRoute.name)} — ${outRoute.distance.toFixed(1)} KM</div>` : ''}
-          ${retRoute ? `<div class="mt-1 text-xs text-cyan-300">Return selected: ${escapeHtml(retRoute.name)} — ${retRoute.distance.toFixed(1)} KM</div>` : ''}
         `;
-        return;
-      }
+      }).join('');
 
-      const totalKm = Number(outRoute.distance) + Number(retRoute.distance);
-      const mileage = Number(document.getElementById('calc-mileage')?.value) || 15;
-      const fuelPrice = Number(document.getElementById('calc-fuel-price')?.value) || 102.50;
-      const fuelCost = mileage > 0 ? (totalKm / mileage) * fuelPrice : 0;
-
-      box.innerHTML = `
-        <div class="font-orbitron text-sm font-bold text-emerald-400">ROUND TRIP READY</div>
-        <div class="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs font-rajdhani">
-          <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2">
-            OUTBOUND<br><strong class="text-amber-300">${outRoute.distance.toFixed(1)} KM</strong>
-          </div>
-          <div class="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-2">
-            RETURN<br><strong class="text-cyan-300">${retRoute.distance.toFixed(1)} KM</strong>
-          </div>
-          <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2">
-            TOTAL<br><strong class="text-emerald-400">${totalKm.toFixed(1)} KM</strong>
-          </div>
-        </div>
-        <div class="mt-3 text-[10px] font-rajdhani text-slate-500">
-          Return KM is independent of outbound KM. This handles one-way roads and different return routes.
-        </div>
-        <button onclick="applySelectedRoundTripRoutes()"
-          class="mt-3 w-full py-2.5 bg-emerald-500/20 hover:bg-emerald-500 hover:text-black border border-emerald-500/40 text-emerald-300 font-orbitron font-bold text-[11px] uppercase rounded-lg transition-all">
-          <i class="fa-solid fa-check-double mr-1"></i>
-          APPLY OUTBOUND + RETURN — ${totalKm.toFixed(1)} KM
-        </button>
-      `;
-    }
-
-    function selectOutboundRoute(index) {
-      selectedOutboundRouteIndex = index;
-      document.querySelectorAll('[id^="outbound-route-card-"]').forEach((el, i) => {
-        el.classList.toggle('border-amber-400', i === index);
-        el.classList.toggle('ring-1', i === index);
-        el.classList.toggle('ring-amber-400/50', i === index);
-      });
-
-      const route = window.currentComputedRoutes?.[index];
-      if(route && !window.currentComputedRouteInput?.roundTrip) {
-        applySingleRoute(route);
-      } else {
-        updateRoundTripSelectionSummary();
+      if(document.getElementById('route-planner-toggle')?.checked) {
+        if(!dashboardMapInstance) initMaps();
+        setTimeout(() => {
+          if(!dashboardMapInstance) return;
+          routePolylines.forEach(p => dashboardMapInstance.removeLayer(p));
+          routePolylines = [];
+          const latOffset = (Math.random() - 0.5) * 0.04;
+          const latlngs1 = [[13.15, 79.91], [13.12 + latOffset, 79.98], [13.08, 80.27]];
+          const latlngs2 = [[13.15, 79.91], [13.19 + latOffset, 79.96], [13.08, 80.27]];
+          const p1 = L.polyline(latlngs1, {color: '#f59e0b', weight: 5}).addTo(dashboardMapInstance).bindPopup('Route 1: Direct Highway');
+          const p2 = L.polyline(latlngs2, {color: '#06b6d4', weight: 4, dashArray: '5, 5'}).addTo(dashboardMapInstance).bindPopup('Route 2: Bypass Route');
+          routePolylines.push(p1, p2);
+          dashboardMapInstance.fitBounds(p1.getBounds());
+          const badge = document.getElementById('map-status-badge');
+          if(badge) badge.innerText = 'Route Ready';
+        }, 350);
       }
     }
-
-    function selectReturnRoute(index) {
-      selectedReturnRouteIndex = index;
-      document.querySelectorAll('[id^="return-route-card-"]').forEach((el, i) => {
-        el.classList.toggle('border-cyan-400', i === index);
-        el.classList.toggle('ring-1', i === index);
-        el.classList.toggle('ring-cyan-400/50', i === index);
-      });
-      updateRoundTripSelectionSummary();
-    }
-
-    function applySingleRoute(route) {
-      const input = window.currentComputedRouteInput || {};
-      document.getElementById('j-start').value = input.from.toUpperCase();
-      document.getElementById('j-dest').value = input.to.toUpperCase();
-      document.getElementById('j-name').value = route.name || 'Planned Route';
-      document.getElementById('j-via').value = input.stops.join(', ');
-      document.getElementById('j-dist').value = Number(route.distance || 0).toFixed(1);
-      document.getElementById('j-start-odo').value = '';
-      document.getElementById('j-end-odo').value = '';
-      document.getElementById('j-round-trip').checked = false;
-      updateJourneyDistancePreview();
-
-      const status = document.getElementById('selected-route-status');
-      if(status) {
-        status.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Selected <strong>${escapeHtml(route.name || 'Planned Route')}</strong> — <strong>${Number(route.distance || 0).toFixed(1)} KM</strong> applied to the Journey form.`;
-      }
-
-      const distanceField = document.getElementById('j-dist');
-      distanceField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => {
-        distanceField.focus();
-        distanceField.select();
-      }, 450);
-
-      alertCustom(`Selected route distance: ${Number(route.distance || 0).toFixed(1)} KM.`);
-    }
-
-    function applySelectedRoundTripRoutes() {
-      const outRoute = window.currentComputedRoutes?.[selectedOutboundRouteIndex];
-      const retRoute = window.currentReturnRoutes?.[selectedReturnRouteIndex];
-      const input = window.currentComputedRouteInput || {};
-
-      if(!outRoute || !retRoute) {
-        alertCustom('Please select both the outbound route and the return route.');
-        return;
-      }
-
-      const totalKm = Number(outRoute.distance) + Number(retRoute.distance);
-
-      document.getElementById('j-start').value = input.from.toUpperCase();
-      document.getElementById('j-dest').value = input.to.toUpperCase();
-      document.getElementById('j-name').value = `${outRoute.name} + ${retRoute.name}`;
-      const outboundViaText = (input.stops || []).join(', ');
-      const returnViaText = (input.returnStops || []).join(', ');
-      document.getElementById('j-via').value =
-        `OUT: ${outboundViaText || 'Direct'} | RETURN: ${returnViaText || 'Direct'}`;
-      document.getElementById('j-dist').value = totalKm.toFixed(1);
-      document.getElementById('j-start-odo').value = '';
-      document.getElementById('j-end-odo').value = '';
-      document.getElementById('j-round-trip').checked = true;
-      updateJourneyDistancePreview();
-
-      const status = document.getElementById('selected-route-status');
-      if(status) {
-        status.innerHTML = `
-          <i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i>
-          Outbound <strong>${escapeHtml(outRoute.name)}</strong> (${outRoute.distance.toFixed(1)} KM)
-          + Return <strong>${escapeHtml(retRoute.name)}</strong> (${retRoute.distance.toFixed(1)} KM)
-          = <strong>${totalKm.toFixed(1)} KM</strong> applied to the Journey form.
-        `;
-      }
-
-      const distanceField = document.getElementById('j-dist');
-      distanceField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-      alertCustom(`Round trip applied: ${outRoute.distance.toFixed(1)} KM outbound + ${retRoute.distance.toFixed(1)} KM return = ${totalKm.toFixed(1)} KM.`);
-    }
-
-    // Backward-compatible handler for any existing route-selection calls.
-    function selectAndApplyRoute(routeIndex) {
-      if(window.currentComputedRouteInput?.roundTrip) {
-        selectOutboundRoute(routeIndex);
-      } else {
-        const route = window.currentComputedRoutes?.[routeIndex];
-        if(route) applySingleRoute(route);
-      }
-    }
-
-    function drawOSRMRoutesOnMap(routes) {
-      if(!dashboardMapInstance || !routes.length) return;
-      routePolylines.forEach(p => dashboardMapInstance.removeLayer(p));
-      routePolylines = [];
-      const bounds = [];
-      routes.forEach((r, idx) => {
-        const coords = r.geometry?.coordinates || [];
-        if(!coords.length) return;
-        const latLngs = coords.map(c => [c[1], c[0]]);
-        latLngs.forEach(p => bounds.push(p));
-        const line = L.polyline(latLngs, {
-          color: idx === 0 ? '#f59e0b' : idx === 1 ? '#06b6d4' : '#10b981',
-          weight: idx === 0 ? 6 : 4,
-          opacity: idx === 0 ? 0.9 : 0.65,
-          dashArray: idx === 0 ? null : '8,7'
-        }).addTo(dashboardMapInstance)
-          .bindPopup(`<b>${escapeHtml(r.name)}</b><br>${Number(r.distance).toFixed(1)} KM · ${escapeHtml(r.time)}`);
-        routePolylines.push(line);
-      });
-      if(bounds.length) dashboardMapInstance.fitBounds(bounds, { padding: [30, 30] });
-    }
-
-    function selectAndApplyRoute(routeIndex) {
-      const route = Array.isArray(window.currentComputedRoutes) ? window.currentComputedRoutes[routeIndex] : null;
-      const input = window.currentComputedRouteInput || {};
-      if(!route || !input.from || !input.to) {
-        alertCustom('Please compute the routes again before selecting one.');
-        return;
-      }
-
-      document.getElementById('j-start').value = input.from.toUpperCase();
-      document.getElementById('j-dest').value = input.to.toUpperCase();
-      document.getElementById('j-name').value = route.name || 'Planned Route';
-      document.getElementById('j-via').value = input.stops.join(', ');
-
-      document.getElementById('j-dist').value = Number(route.distance || 0).toFixed(1);
-      document.getElementById('j-start-odo').value = '';
-      document.getElementById('j-end-odo').value = '';
-      document.getElementById('j-round-trip').checked = false;
-      updateJourneyDistancePreview();
-
-      const status = document.getElementById('selected-route-status');
-      if(status) {
-        status.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Selected <strong>${escapeHtml(route.name || 'Planned Route')}</strong> — <strong>${Number(route.distance || 0).toFixed(1)} KM</strong> applied to the Journey form.`;
-      }
-
-      const distanceField = document.getElementById('j-dist');
-      distanceField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => {
-        distanceField.focus();
-        distanceField.select();
-      }, 450);
-
-      alertCustom(`Selected route distance: ${Number(route.distance || 0).toFixed(1)} KM. This OSRM road distance is now in the Journey form.`);
-    }
-
-    function navigatePlannedRoute(routeIndex, direction) {
-      const input = window.currentComputedRouteInput || {};
-      const isReturn = String(direction || '').toLowerCase() === 'return';
-
-      const from = isReturn ? String(input.to || '').trim() : String(input.from || '').trim();
-      const to = isReturn ? String(input.from || '').trim() : String(input.to || '').trim();
-
-      const via = isReturn
-        ? (Array.isArray(input.returnStops) ? input.returnStops : [])
-        : (Array.isArray(input.stops) ? input.stops : []);
-
-      if(!from || !to) {
-        alertCustom('Please compute the route first.');
-        return;
-      }
-
-      navigateToGoogleMaps(from, to, via);
-    }
-
-    function navigateToGoogleMaps(from, to, via) {
-      const origin = String(from || '').trim();
-      const destination = String(to || '').trim();
-      const stops = Array.isArray(via)
-        ? via.map(s => String(s || '').trim()).filter(Boolean)
-        : [];
-
-      if(!origin || !destination) {
-        alertCustom('Please enter both Start Place and Destination Place first.');
-        return;
-      }
-
-      const params = new URLSearchParams();
-      params.set('api', '1');
-      params.set('origin', origin);
-      params.set('destination', destination);
-      params.set('travelmode', 'driving');
-
-      if(stops.length) {
-        params.set('waypoints', stops.join('|'));
-      }
-
-      const mapsUrl = 'https://www.google.com/maps/dir/?' + params.toString();
-
-      // Use direct navigation instead of window.open().
-      // This avoids popup blockers and guarantees that the button redirects
-      // to Google Maps from the user's click.
-      // Same-tab navigation: Google Maps replaces the DriveLog page in this tab.
-      // Open Google Maps in a NEW TAB and keep DriveLog open in the current tab.
-      const mapsWindow = window.open(mapsUrl, '_blank', 'noopener,noreferrer');
-      if(!mapsWindow) {
-        alertCustom('Google Maps could not be opened. Please allow pop-ups for this DriveLog page.');
-      }
-    }
-
 
     function selectAndApplyRoute(from, to, distance, routeName) {
       document.getElementById('j-start').value = from.toUpperCase();
       document.getElementById('j-dest').value = to.toUpperCase();
       document.getElementById('j-name').value = routeName;
-      document.getElementById('j-via').value = calcStops.join(', ');
 
       // Apply the selected route distance directly into the Journey Form.
       // This is the same Total Distance field used for manual entry.
@@ -1373,6 +864,12 @@
       document.getElementById('j-start-odo').value = '';
       document.getElementById('j-end-odo').value = '';
       document.getElementById('j-round-trip').checked = false;
+      const localBox = document.getElementById('j-local-drive');
+      if (localBox) localBox.checked = false;
+      toggleLocalDrive();
+      const localBox = document.getElementById('j-local-drive');
+      if (localBox) localBox.checked = false;
+      toggleLocalDrive();
       updateJourneyDistancePreview();
 
       const status = document.getElementById('selected-route-status');
@@ -1520,7 +1017,25 @@
     }
 
     // JOURNEYS
+    function toggleLocalDrive() {
+      const enabled = document.getElementById('j-local-drive')?.checked || false;
+      ['j-dist', 'j-start-odo', 'j-end-odo'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.disabled = enabled;
+        if (enabled) el.value = '';
+      });
+      const status = document.getElementById('journey-distance-status');
+      if (status) status.innerHTML = enabled
+        ? '<strong class="text-amber-300">Local Drive selected: fixed 1.0 KM.</strong>'
+        : 'Distance ready for manual entry.';
+      if (!enabled) updateJourneyDistancePreview();
+    }
+
     function getJourneyDistance() {
+      if (document.getElementById('j-local-drive')?.checked) {
+        return { baseDistance: 1, distance: 1, roundTrip: false, localDrive: true };
+      }
       const direct = Number(document.getElementById('j-dist').value);
       const startOdo = Number(document.getElementById('j-start-odo').value);
       const endOdo = Number(document.getElementById('j-end-odo').value);
@@ -1529,20 +1044,14 @@
       return { baseDistance, distance: roundTrip ? baseDistance * 2 : baseDistance, roundTrip };
     }
 
-    function navigateCurrentJourney() {
-      const from = document.getElementById('j-start')?.value || '';
-      const to = document.getElementById('j-dest')?.value || '';
-      const via = (document.getElementById('j-via')?.value || '')
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean);
-      navigateToGoogleMaps(from, to, via);
-    }
-
     function updateJourneyDistancePreview() {
       const result = getJourneyDistance();
       const status = document.getElementById('journey-distance-status');
       if(!status) return;
+      if(result.localDrive) {
+        status.innerHTML = '<strong class="text-amber-300">Local Drive selected: fixed 1.0 KM.</strong>';
+        return;
+      }
       if(result.baseDistance <= 0) {
         status.innerHTML = '<span class="text-amber-300">Enter Total KM, or both Start & End Odometer readings.</span>';
         return;
@@ -1570,15 +1079,13 @@
         endOdo: document.getElementById('j-end-odo').value,
         roundTrip: calc.roundTrip,
         notes: '',
-        via: (document.getElementById('j-via').value || '').split(',').map(s => s.trim()).filter(Boolean)
+        via: [...calcStops]
       };
       journeys.unshift(newJ);
       localStorage.setItem('akash_journeys', JSON.stringify(journeys));
       syncToSheets('journey', newJ);
       e.target.reset();
       calcStops = [];
-      const viaField = document.getElementById('j-via');
-      if(viaField) viaField.value = '';
       initApp();
       alertCustom('Journey logged and synced successfully!');
     }
@@ -1848,11 +1355,11 @@
         <td class="py-3 px-4 text-slate-300">${j.date}</td><td class="py-3 px-4 text-amber-400 font-bold">${j.vehicle}</td><td class="py-3 px-4">${j.tripName||'-'}</td>
         <td class="py-3 px-4">${j.startPlace}${s.length?' → <span class="text-cyan-300">VIA '+s.join(' → ')+'</span> → ':' → '}${j.destination}</td>
         <td class="py-3 px-4 text-cyan-400 font-bold">${Number(j.distance||0).toFixed(1)} KM</td><td class="py-3 px-4 text-amber-300 font-bold">${j.roundTrip?'2x ROUND':'ONE WAY'}</td>
-        <td class="py-3 px-4 text-right whitespace-nowrap"><button onclick="openViewJourneyModal(${j.id})" title="View" class="mr-2 text-slate-400 hover:text-cyan-400"><i class="fa-solid fa-eye"></i></button><button onclick="navigateToGoogleMaps(${JSON.stringify(j.startPlace || '')},${JSON.stringify(j.destination || '')},${JSON.stringify(s)})" title="Navigate to Google Maps" class="mr-2 text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-location-arrow"></i></button><button onclick="openEditJourneyModal(${j.id})" title="Edit" class="mr-2 text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteJourney(${j.id},${j.rowIndex||-1})" title="Delete" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button></td>
+        <td class="py-3 px-4 text-right whitespace-nowrap"><button onclick="openViewJourneyModal(${j.id})" title="View" class="mr-2 text-slate-400 hover:text-cyan-400"><i class="fa-solid fa-eye"></i></button><button onclick="openEditJourneyModal(${j.id})" title="Edit" class="mr-2 text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteJourney(${j.id},${j.rowIndex||-1})" title="Delete" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button></td>
       </tr>`;}).join('');
     }
     function populateHistoryYearFilter(){
-      const e=document.getElementById('filter-year');if(!e)return;const cur=e.value||'all';const years=[...new Set(journeys.map(j=>String(j.date||'').slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort().reverse();
+      const e=document.getElementById('filter-year');if(!e)return;const cur=e.value||'all';const years=[...new Set(journeys.map(j=>String(j.date||'').slice(0,4)).filter(y=>/^\\d{4}$/.test(y)))].sort().reverse();
       e.innerHTML='<option value="all">All Years</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');e.value=years.includes(cur)?cur:'all';
     }
 
@@ -1892,7 +1399,6 @@
       document.getElementById('edit-j-name').value = j.tripName || '';
       document.getElementById('edit-j-start').value = j.startPlace || '';
       document.getElementById('edit-j-dest').value = j.destination || '';
-      document.getElementById('edit-j-via').value = (Array.isArray(j.stops) ? j.stops : (Array.isArray(j.via) ? j.via : [])).join(', ');
       document.getElementById('edit-j-dist').value = j.distance || '';
       document.getElementById('edit-j-start-odo').value = j.startOdo || '';
       document.getElementById('edit-j-end-odo').value = j.endOdo || '';
@@ -1911,8 +1417,6 @@
         journeys[idx].tripName = document.getElementById('edit-j-name').value;
         journeys[idx].startPlace = document.getElementById('edit-j-start').value.toUpperCase();
         journeys[idx].destination = document.getElementById('edit-j-dest').value.toUpperCase();
-        journeys[idx].via = document.getElementById('edit-j-via').value.split(',').map(s => s.trim()).filter(Boolean);
-        journeys[idx].stops = [...journeys[idx].via];
         journeys[idx].distance = Number(document.getElementById('edit-j-dist').value);
         journeys[idx].startOdo = document.getElementById('edit-j-start-odo').value;
         journeys[idx].endOdo = document.getElementById('edit-j-end-odo').value;
@@ -1967,15 +1471,15 @@
         .then(res => res.json())
         .then(data => {
           if(data.status === 'success') {
-            if(Array.isArray(data.journeys)) {
+            if(data.journeys && data.journeys.length > 0) {
               journeys = data.journeys;
               localStorage.setItem('akash_journeys', JSON.stringify(journeys));
             }
-            if(Array.isArray(data.fuel)) {
+            if(data.fuel && data.fuel.length > 0) {
               fuelLogs = data.fuel;
               localStorage.setItem('akash_fuel', JSON.stringify(fuelLogs));
             }
-            if(Array.isArray(data.maint)) {
+            if(data.maint && data.maint.length > 0) {
               maintLogs = data.maint;
               localStorage.setItem('akash_maint', JSON.stringify(maintLogs));
             }
@@ -1999,12 +1503,6 @@
               generalDocs = data.generalDocs.map((d,i)=>({...d,id:d.id||`gdoc_${i}_${Date.now()}`}));
               localStorage.setItem('akash_general_docs', JSON.stringify(generalDocs));
             }
-            if(data.wallpaperUrl) {
-              customWallpaper = normalizeWallpaperUrl(data.wallpaperUrl) || DEFAULT_WALLPAPER;
-              localStorage.setItem('akash_wallpaper', customWallpaper);
-              const cloudHero = document.getElementById('hero-section');
-              if(cloudHero) cloudHero.style.backgroundImage = `url("${customWallpaper.replace(/"/g, '\\"')}")`;
-            }
             if(data.reminderEmail) {
               reminderEmail = data.reminderEmail;
               localStorage.setItem('akash_reminder_email', reminderEmail);
@@ -2022,108 +1520,15 @@
     }
 
     // WALLPAPER
-    const DEFAULT_WALLPAPER = 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1920&auto=format&fit=crop';
-
-    function openWallpaperModal() {
-      const modal = document.getElementById('modal-wallpaper');
-      const input = document.getElementById('wallpaper-url-input');
-      if (modal) modal.classList.remove('hidden');
-      if (input) {
-        input.value = customWallpaper || '';
-        updateWallpaperPreview();
-      }
-    }
-
-    function closeWallpaperModal() {
-      document.getElementById('modal-wallpaper').classList.add('hidden');
-    }
-
-    function setWallpaperExample(url) {
-      const input = document.getElementById('wallpaper-url-input');
-      if (input) {
-        input.value = url;
-        updateWallpaperPreview();
-      }
-    }
-
-    // Converts common Google Drive sharing links into a browser-friendly image URL.
-    // Normal direct image URLs are returned unchanged.
-    function normalizeWallpaperUrl(rawUrl) {
-      let url = String(rawUrl || '').trim();
-      if (!url) return '';
-
-      // Google Drive: /file/d/FILE_ID/view, /open?id=FILE_ID, /uc?id=FILE_ID, etc.
-      const driveMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*?&)?id=)([a-zA-Z0-9_-]+)/i);
-      if (driveMatch) {
-        return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveMatch[1]) + '&sz=s4000';
-      }
-
-      // If the user pasted only a Drive file ID.
-      if (/^[a-zA-Z0-9_-]{20,}$/.test(url)) {
-        return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(url) + '&sz=s4000';
-      }
-
-      return url;
-    }
-
-    function updateWallpaperPreview() {
-      const input = document.getElementById('wallpaper-url-input');
-      const wrap = document.getElementById('wallpaper-preview-wrap');
-      const img = document.getElementById('wallpaper-preview');
-      if (!input || !wrap || !img) return;
-      const url = normalizeWallpaperUrl(input.value);
-      if (!url) {
-        wrap.classList.add('hidden');
-        img.removeAttribute('src');
-        return;
-      }
-      img.onload = () => wrap.classList.remove('hidden');
-      img.onerror = () => wrap.classList.add('hidden');
-      img.src = url;
-    }
-
+    function openWallpaperModal() { document.getElementById('modal-wallpaper').classList.remove('hidden'); }
+    function closeWallpaperModal() { document.getElementById('modal-wallpaper').classList.add('hidden'); }
     function saveWallpaperUrl() {
-      const raw = document.getElementById('wallpaper-url-input').value.trim();
-      if (!raw) {
-        alertCustom('Please paste an image link first.');
-        return;
-      }
-
-      const normalized = normalizeWallpaperUrl(raw);
-      const hero = document.getElementById('hero-section');
-      const testImage = new Image();
-      testImage.onload = function() {
-        customWallpaper = normalized;
-        localStorage.setItem('akash_wallpaper', customWallpaper);
-        hero.style.backgroundImage = `url("${customWallpaper.replace(/"/g, '\\"')}")`;
-        // Save the selected wallpaper in Google Sheets so every connected device uses the same one.
-        syncToSheets('sync_wallpaper', customWallpaper);
-        closeWallpaperModal();
-        alertCustom('Custom wallpaper applied and saved to Cloud!');
-      };
-      testImage.onerror = function() {
-        alertCustom('Wallpaper could not be loaded. Check the link or Drive sharing permission.');
-      };
-      testImage.src = normalized;
-    }
-
-    function resetWallpaper() {
-      customWallpaper = DEFAULT_WALLPAPER;
+      customWallpaper = document.getElementById('wallpaper-url-input').value.trim();
       localStorage.setItem('akash_wallpaper', customWallpaper);
-      // Reset is also a cloud setting, so all connected devices return to the default.
-      syncToSheets('sync_wallpaper', DEFAULT_WALLPAPER);
-      const hero = document.getElementById('hero-section');
-      if (hero) hero.style.backgroundImage = `url("${DEFAULT_WALLPAPER}")`;
-      const input = document.getElementById('wallpaper-url-input');
-      if (input) input.value = DEFAULT_WALLPAPER;
-      updateWallpaperPreview();
+      document.getElementById('hero-section').style.backgroundImage = `url('${customWallpaper}')`;
       closeWallpaperModal();
-      alertCustom('Default wallpaper restored!');
+      alertCustom('Custom wallpaper applied!');
     }
-
-    document.addEventListener('input', function(e) {
-      if (e.target && e.target.id === 'wallpaper-url-input') updateWallpaperPreview();
-    });
 
     function alertCustom(msg) {
       const box = document.createElement('div');
