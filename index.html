@@ -1438,7 +1438,7 @@
       if (!text) return [];
 
       // Split only on the separators used for stored stop lists; retain their order.
-      return text.split(/\\s*(?:\\|\\||\\||→|➜|;|\\n)\\s*/g)
+      return text.split(/\s*(?:\|\||\||→|➜|;|\n)\s*/g)
         .map(v => v.trim())
         .filter(Boolean);
     }
