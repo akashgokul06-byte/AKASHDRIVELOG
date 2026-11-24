@@ -1164,7 +1164,8 @@
         distance: Number(calc.distance.toFixed(1)),
         startOdo: document.getElementById('j-start-odo').value,
         endOdo: document.getElementById('j-end-odo').value,
-        roundTrip: calc.roundTrip,
+        roundTrip: !!calc.roundTrip,
+        localDrive: !!calc.localDrive,
         notes: '',
         via: [...calcStops]
       };
@@ -1433,10 +1434,9 @@
     }
 
     function isRoundTripJourney(value) {
-      return value === true || value === 1 ||
-        String(value).trim().toLowerCase() === 'true' ||
-        String(value).trim() === '1' ||
-        String(value).trim().toLowerCase() === 'yes';
+      if (value === true || value === 1) return true;
+      const normalized = String(value ?? '').trim().toLowerCase();
+      return ['true', '1', 'yes', 'y', 'round trip', 'roundtrip'].includes(normalized);
     }
 
     function isLocalTripJourney(j) {
@@ -1528,8 +1528,7 @@
       document.getElementById('edit-j-dest').value = j.destination || '';
       // Sheets stores the TOTAL driven distance. The edit form asks for the
       // one-way/base distance so ticking Round Trip can safely recalculate it.
-      const savedRoundTrip = j.roundTrip === true ||
-        String(j.roundTrip).toLowerCase() === 'true' || String(j.roundTrip) === '1';
+      const savedRoundTrip = isRoundTripJourney(j.roundTrip);
       const savedTotalDistance = Number(j.distance) || 0;
       document.getElementById('edit-j-dist').value =
         savedRoundTrip ? (savedTotalDistance / 2).toFixed(1) : savedTotalDistance;
@@ -1551,7 +1550,7 @@
         journeys[idx].startPlace = document.getElementById('edit-j-start').value.toUpperCase();
         journeys[idx].destination = document.getElementById('edit-j-dest').value.toUpperCase();
         const editBaseDistance = Number(document.getElementById('edit-j-dist').value) || 0;
-        const editRoundTrip = document.getElementById('edit-j-round-trip').checked;
+        const editRoundTrip = !!document.getElementById('edit-j-round-trip').checked;
         // Persist one canonical value: total KM including the return journey.
         journeys[idx].distance = Number((editRoundTrip ? editBaseDistance * 2 : editBaseDistance).toFixed(1));
         journeys[idx].startOdo = document.getElementById('edit-j-start-odo').value;
