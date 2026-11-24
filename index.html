@@ -396,7 +396,7 @@
                 <tr class="border-b border-[#132840] text-slate-400 uppercase font-orbitron">
                   <th class="py-3 px-4">Date</th>
                   <th class="py-3 px-4">Vehicle</th>
-                  <th class="py-3 px-4">Route Name</th>
+                  <th class="py-3 px-4">Trip Name</th>
                   <th class="py-3 px-4">From → Via → To</th>
                   <th class="py-3 px-4">Distance</th>
                   <th class="py-3 px-4">Trip</th>
@@ -788,6 +788,8 @@
       `).join('');
     }
 
+    let selectedJourneyRoute = null;
+
     function generateMultipleRoutes() {
       const from = document.getElementById('calc-from')?.value.trim() || 'Kadambathur';
       const to = document.getElementById('calc-to')?.value.trim() || 'Chennai';
@@ -846,7 +848,14 @@
         const toll = isRoundTrip ? (r.id === 1 ? 65 : (r.id === 2 ? 45 : 30)) : (r.id === 1 ? 45 : (r.id === 2 ? 20 : 0));
         const total = fuelCost + toll;
         const routePayload = JSON.stringify({
-          from, to, distance: r.distance, routeName: r.name, roundTrip: isRoundTrip,
+          from, to,
+          distance: r.distance,
+          routeName: r.name,
+          roundTrip: isRoundTrip,
+          outboundDistance: r.outbound ? r.outbound.distance : r.distance,
+          returnDistance: r.inbound ? r.inbound.distance : 0,
+          outboundVia: r.outbound ? r.outbound.via : r.via,
+          returnVia: r.inbound ? r.inbound.via : '',
           via: r.via
         }).replace(/</g, '\\u003c');
         return `
@@ -889,23 +898,35 @@
       const to = data.to || '';
       const distance = Number(data.distance) || 0;
       const routeName = data.routeName || 'Selected Route';
+      const isRoundTrip = data.roundTrip === true || String(data.roundTrip).toLowerCase() === 'true';
 
       document.getElementById('j-start').value = from.toUpperCase();
       document.getElementById('j-dest').value = to.toUpperCase();
-      document.getElementById('j-name').value = routeName;
+      // Keep Trip Name user-controlled; route option names are not trip names.
+      // Do not overwrite a name the user has already entered.
       const distanceField = document.getElementById('j-dist');
       distanceField.value = distance.toFixed(1);
       document.getElementById('j-start-odo').value = '';
       document.getElementById('j-end-odo').value = '';
-      document.getElementById('j-round-trip').checked = false;
+      document.getElementById('j-round-trip').checked = isRoundTrip;
       const localBox = document.getElementById('j-local-drive');
       if (localBox) localBox.checked = false;
       toggleLocalDrive();
+
+      selectedJourneyRoute = {
+        distance: Number(distance.toFixed(1)),
+        roundTrip: isRoundTrip,
+        outboundDistance: Number(data.outboundDistance || distance),
+        returnDistance: Number(data.returnDistance || 0),
+        outboundVia: data.outboundVia || '',
+        returnVia: data.returnVia || '',
+        via: data.via || ''
+      };
       updateJourneyDistancePreview();
 
       const status = document.getElementById('selected-route-status');
       if (status) {
-        status.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Selected: <strong>${routeName} (${distance.toFixed(1)} KM total${data.roundTrip ? ', return via a different route' : ''})</strong> — total distance filled into <strong>Total Distance (KM)</strong> below.`;
+        status.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Selected: <strong>${routeName} (${distance.toFixed(1)} KM total${isRoundTrip ? ', round trip' : ''})</strong> — combined distance filled below.`;
       }
       distanceField.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => { distanceField.focus(); distanceField.select(); }, 450);
@@ -913,9 +934,11 @@
     }
 
     function selectAndApplyRoute(from, to, distance, routeName) {
+      selectedJourneyRoute = null;
       document.getElementById('j-start').value = from.toUpperCase();
       document.getElementById('j-dest').value = to.toUpperCase();
-      document.getElementById('j-name').value = routeName;
+      // Keep the Trip Name field user-controlled; selecting a route must not
+      // replace it with an automatically generated route label.
 
       // Apply the selected route distance directly into the Journey Form.
       // This is the same Total Distance field used for manual entry.
@@ -1095,6 +1118,14 @@
         return { baseDistance: 1, distance: 1, roundTrip: false, localDrive: true };
       }
       const direct = Number(document.getElementById('j-dist').value);
+      if (selectedJourneyRoute && Math.abs(direct - selectedJourneyRoute.distance) < 0.001) {
+        return {
+          baseDistance: direct,
+          distance: direct,
+          roundTrip: selectedJourneyRoute.roundTrip,
+          route: selectedJourneyRoute
+        };
+      }
       const startOdo = Number(document.getElementById('j-start-odo').value);
       const endOdo = Number(document.getElementById('j-end-odo').value);
       let baseDistance = direct > 0 ? direct : ((endOdo > startOdo && startOdo >= 0) ? endOdo - startOdo : 0);
@@ -1103,6 +1134,10 @@
     }
 
     function updateJourneyDistancePreview() {
+      const distanceNow = Number(document.getElementById('j-dist')?.value || 0);
+      if (selectedJourneyRoute && Math.abs(distanceNow - selectedJourneyRoute.distance) >= 0.001) {
+        selectedJourneyRoute = null;
+      }
       const result = getJourneyDistance();
       const status = document.getElementById('journey-distance-status');
       if(!status) return;
@@ -1131,18 +1166,27 @@
         tripName: document.getElementById('j-name').value,
         startPlace: document.getElementById('j-start').value.toUpperCase(),
         destination: document.getElementById('j-dest').value.toUpperCase(),
-        stops: [...calcStops],
+        stops: calc.route
+          ? (calc.route.roundTrip
+              ? [`OUTBOUND: ${calc.route.outboundVia}`, `RETURN: ${calc.route.returnVia}`].filter(v => !v.endsWith(': '))
+              : String(calc.route.via || '').split(/\\s*(?:\\|\\||\\|)\\s*/).filter(Boolean))
+          : [...calcStops],
         distance: Number(calc.distance.toFixed(1)),
         startOdo: document.getElementById('j-start-odo').value,
         endOdo: document.getElementById('j-end-odo').value,
         roundTrip: calc.roundTrip,
         notes: '',
-        via: [...calcStops]
+        via: calc.route
+          ? (calc.route.roundTrip
+              ? [`OUTBOUND: ${calc.route.outboundVia}`, `RETURN: ${calc.route.returnVia}`].filter(v => !v.endsWith(': '))
+              : String(calc.route.via || '').split(/\\s*(?:\\|\\||\\|)\\s*/).filter(Boolean))
+          : [...calcStops]
       };
       journeys.unshift(newJ);
       localStorage.setItem('akash_journeys', JSON.stringify(journeys));
       syncToSheets('journey', newJ);
       e.target.reset();
+      selectedJourneyRoute = null;
       calcStops = [];
       initApp();
       alertCustom('Journey logged and synced successfully!');
@@ -1462,7 +1506,7 @@
       content.innerHTML = `
         <div><strong class="text-amber-400">Date:</strong> ${escapeJourneyDetail(j.date)}</div>
         <div><strong class="text-amber-400">Vehicle:</strong> ${escapeJourneyDetail(j.vehicle)}</div>
-        <div class="break-words"><strong class="text-amber-400">Route Name:</strong> ${escapeJourneyDetail(j.tripName || 'N/A')}</div>
+        <div class="break-words"><strong class="text-amber-400">Trip Name:</strong> ${escapeJourneyDetail(j.tripName || 'N/A')}</div>
         <div class="break-words"><strong class="text-amber-400">Start:</strong> ${escapeJourneyDetail(j.startPlace)}</div>
         ${stopsHtml}
         <div class="break-words"><strong class="text-amber-400">Destination:</strong> ${escapeJourneyDetail(j.destination)}</div>
@@ -1488,7 +1532,7 @@
       document.getElementById('edit-j-dist').value = j.distance || '';
       document.getElementById('edit-j-start-odo').value = j.startOdo || '';
       document.getElementById('edit-j-end-odo').value = j.endOdo || '';
-      document.getElementById('edit-j-round-trip').checked = !!j.roundTrip;
+      document.getElementById('edit-j-round-trip').checked = j.roundTrip === true || String(j.roundTrip).toLowerCase() === 'true' || String(j.roundTrip) === '1';
       document.getElementById('modal-edit-journey').classList.remove('hidden');
     }
     function closeEditJourneyModal() { document.getElementById('modal-edit-journey').classList.add('hidden'); }
