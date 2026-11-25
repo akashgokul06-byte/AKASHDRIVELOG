@@ -1452,7 +1452,7 @@
       const filtered=journeys.filter(j=>{const d=String(j.date||'');return(fv==='all'||j.vehicle===fv)&&(fy==='all'||d.slice(0,4)===fy)&&(fm==='all'||d.slice(5,7)===fm)&&(!fd||d===fd);});
       if(!filtered.length){tb.innerHTML='<tr><td colspan="7" class="py-8 px-4 text-center text-slate-500">No journeys match the selected filters.</td></tr>';return;}
       tb.innerHTML=filtered.map(j=>{const s=Array.isArray(j.stops)?j.stops:(Array.isArray(j.via)?j.via:[]);const routeHtml=isLocalTripJourney(j)?'KADAMBATHUR':`${j.startPlace||''}${s.length?' → <span class=\"text-cyan-300\">VIA '+s.join(' → ')+'</span> → ':' → '}${j.destination||''}`;return `<tr class="border-b border-[#132840]/50 hover:bg-[#06101c]/50">
-        <td class="py-3 px-4 text-slate-300">${j.date}</td><td class="py-3 px-4 text-amber-400 font-bold">${j.vehicle}</td><td class="py-3 px-4">${j.tripName||'-'}</td>
+        <td class="py-3 px-4 text-slate-300 whitespace-nowrap">${formatJourneyDateDisplay(j.date)}</td><td class="py-3 px-4 text-amber-400 font-bold">${j.vehicle}</td><td class="py-3 px-4">${j.tripName||'-'}</td>
         <td class="py-3 px-4">${routeHtml}</td>
         <td class="py-3 px-4 text-cyan-400 font-bold">${Number(j.distance||0).toFixed(1)} KM</td><td class="py-3 px-4 text-amber-300 font-bold">${isLocalTripJourney(j) ? 'LOCAL TRIP' : (isRoundTripJourney(j.roundTrip) ? 'ROUND TRIP' : 'ONE WAY')}</td>
         <td class="py-3 px-4 text-right whitespace-nowrap"><button onclick="openViewJourneyModal(${j.id})" title="View" class="mr-2 text-slate-400 hover:text-cyan-400"><i class="fa-solid fa-eye"></i></button><button onclick="openEditJourneyModal(${j.id})" title="Edit" class="mr-2 text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteJourney(${j.id},${j.rowIndex||-1})" title="Delete" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button></td>
@@ -1491,6 +1491,13 @@
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    // Display dates as DD-MM-YYYY while keeping stored/filter/edit dates as YYYY-MM-DD.
+    function formatJourneyDateDisplay(value) {
+      const raw = String(value ?? '').trim();
+      const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return match ? `${match[3]}-${match[2]}-${match[1]}` : raw;
+    }
+
     function openViewJourneyModal(id) {
       const j = journeys.find(item => String(item.id) === String(id));
       if(!j) return;
@@ -1505,7 +1512,7 @@
 
       const content = document.getElementById('view-journey-content');
       content.innerHTML = `
-        <div><strong class="text-amber-400">Date:</strong> ${escapeJourneyDetail(j.date)}</div>
+        <div><strong class="text-amber-400">Date:</strong> ${escapeJourneyDetail(formatJourneyDateDisplay(j.date))}</div>
         <div><strong class="text-amber-400">Vehicle:</strong> ${escapeJourneyDetail(j.vehicle)}</div>
         <div class="break-words"><strong class="text-amber-400">Trip Name:</strong> ${escapeJourneyDetail(isLocal ? 'KBT DRIVE' : (j.tripName || 'N/A'))}</div>
         ${isLocal ? '' : `<div class="break-words"><strong class="text-amber-400">Start:</strong> ${escapeJourneyDetail(j.startPlace)}</div>`}
