@@ -1592,13 +1592,29 @@
     }
 
     function syncToSheets(type, payload) {
-      if(!sheetsWebhookUrl) return;
-      fetch(sheetsWebhookUrl, {
+      if(!sheetsWebhookUrl) {
+        console.warn('Cloud Sync skipped: Google Sheets webhook URL is missing.');
+        return Promise.resolve(false);
+      }
+
+      // Always send a real JSON boolean for journey round-trip state.
+      // This avoids sending an absent/undefined checkbox value to Apps Script.
+      const outgoingPayload = (type === 'journey' || type === 'edit_journey')
+        ? { ...payload, roundTrip: payload.roundTrip === true || String(payload.roundTrip).trim().toLowerCase() === 'true' || payload.roundTrip === 1 || String(payload.roundTrip).trim() === '1' }
+        : payload;
+
+      // Apps Script Web Apps commonly require no-cors for cross-origin POSTs.
+      // The opaque response cannot confirm the write; a subsequent GET sync
+      // reads the persisted value back from the sheet.
+      return fetch(sheetsWebhookUrl, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ type, payload })
-      }).catch(err => console.error("Cloud Sync Error:", err));
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ type, payload: outgoingPayload })
+      }).then(() => true).catch(err => {
+        console.error('Cloud Sync Error:', err);
+        return false;
+      });
     }
 
     function syncDataFromSheets(showAlert = false) {
