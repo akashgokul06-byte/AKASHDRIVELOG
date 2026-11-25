@@ -1100,7 +1100,7 @@
       const localDriveEnabled = document.getElementById('j-local-drive')?.checked;
       const tripNameInput = document.getElementById('j-name');
       if (localDriveEnabled && tripNameInput && !tripNameInput.value.trim()) {
-        tripNameInput.value = 'LOCAL TRIP';
+        tripNameInput.value = 'KBT DRIVE';
       }
 
       const enabled = document.getElementById('j-local-drive')?.checked || false;
@@ -1155,11 +1155,11 @@
         id: Date.now(),
         date: document.getElementById('j-date').value,
         vehicle: document.getElementById('j-vehicle').value,
-        tripName: (document.getElementById('j-local-drive')?.checked)
-          ? 'LOCAL TRIP'
+        tripName: calc.localDrive
+          ? 'KBT DRIVE'
           : (document.getElementById('j-name').value.trim() || 'Untitled Trip'),
-        startPlace: document.getElementById('j-start').value.toUpperCase(),
-        destination: document.getElementById('j-dest').value.toUpperCase(),
+        startPlace: calc.localDrive ? 'KADAMBATHUR' : document.getElementById('j-start').value.toUpperCase(),
+        destination: calc.localDrive ? '' : document.getElementById('j-dest').value.toUpperCase(),
         stops: [...calcStops],
         distance: Number(calc.distance.toFixed(1)),
         startOdo: document.getElementById('j-start-odo').value,
@@ -1441,7 +1441,8 @@
 
     function isLocalTripJourney(j) {
       const name = String(j?.tripName || '').trim().toUpperCase();
-      return name === 'LOCAL TRIP' || name === 'LOCAL DRIVE';
+      return j?.localDrive === true || String(j?.localDrive).toLowerCase() === 'true' ||
+        name === 'KBT DRIVE' || name === 'LOCAL TRIP' || name === 'LOCAL DRIVE';
     }
 
     // HISTORY — independent vehicle/year/month/date filters.
@@ -1450,9 +1451,9 @@
       if(!tb)return; populateHistoryYearFilter();
       const filtered=journeys.filter(j=>{const d=String(j.date||'');return(fv==='all'||j.vehicle===fv)&&(fy==='all'||d.slice(0,4)===fy)&&(fm==='all'||d.slice(5,7)===fm)&&(!fd||d===fd);});
       if(!filtered.length){tb.innerHTML='<tr><td colspan="7" class="py-8 px-4 text-center text-slate-500">No journeys match the selected filters.</td></tr>';return;}
-      tb.innerHTML=filtered.map(j=>{const s=Array.isArray(j.stops)?j.stops:(Array.isArray(j.via)?j.via:[]);return `<tr class="border-b border-[#132840]/50 hover:bg-[#06101c]/50">
+      tb.innerHTML=filtered.map(j=>{const s=Array.isArray(j.stops)?j.stops:(Array.isArray(j.via)?j.via:[]);const routeHtml=isLocalTripJourney(j)?'KADAMBATHUR':`${j.startPlace||''}${s.length?' → <span class=\"text-cyan-300\">VIA '+s.join(' → ')+'</span> → ':' → '}${j.destination||''}`;return `<tr class="border-b border-[#132840]/50 hover:bg-[#06101c]/50">
         <td class="py-3 px-4 text-slate-300">${j.date}</td><td class="py-3 px-4 text-amber-400 font-bold">${j.vehicle}</td><td class="py-3 px-4">${j.tripName||'-'}</td>
-        <td class="py-3 px-4">${j.startPlace}${s.length?' → <span class="text-cyan-300">VIA '+s.join(' → ')+'</span> → ':' → '}${j.destination}</td>
+        <td class="py-3 px-4">${routeHtml}</td>
         <td class="py-3 px-4 text-cyan-400 font-bold">${Number(j.distance||0).toFixed(1)} KM</td><td class="py-3 px-4 text-amber-300 font-bold">${isLocalTripJourney(j) ? 'LOCAL TRIP' : (isRoundTripJourney(j.roundTrip) ? 'ROUND TRIP' : 'ONE WAY')}</td>
         <td class="py-3 px-4 text-right whitespace-nowrap"><button onclick="openViewJourneyModal(${j.id})" title="View" class="mr-2 text-slate-400 hover:text-cyan-400"><i class="fa-solid fa-eye"></i></button><button onclick="openEditJourneyModal(${j.id})" title="Edit" class="mr-2 text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteJourney(${j.id},${j.rowIndex||-1})" title="Delete" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button></td>
       </tr>`;}).join('');
@@ -1494,19 +1495,22 @@
       const j = journeys.find(item => String(item.id) === String(id));
       if(!j) return;
 
+      const isLocal = isLocalTripJourney(j);
       const stops = journeyStopsInSavedOrder(j);
-      const stopsHtml = stops.length
-        ? `<div class="break-words"><strong class="text-amber-400">Via / Stops (saved order):</strong><ol class="list-decimal list-inside mt-1 space-y-1">${stops.map(stop => `<li>${escapeJourneyDetail(stop)}</li>`).join('')}</ol></div>`
-        : `<div><strong class="text-amber-400">Via / Stops:</strong> None recorded</div>`;
+      const stopsHtml = isLocal
+        ? `<div class="break-words"><strong class="text-amber-400">From → Via → To:</strong> KADAMBATHUR</div>`
+        : (stops.length
+          ? `<div class="break-words"><strong class="text-amber-400">Via / Stops (saved order):</strong><ol class="list-decimal list-inside mt-1 space-y-1">${stops.map(stop => `<li>${escapeJourneyDetail(stop)}</li>`).join('')}</ol></div>`
+          : `<div><strong class="text-amber-400">Via / Stops:</strong> None recorded</div>`);
 
       const content = document.getElementById('view-journey-content');
       content.innerHTML = `
         <div><strong class="text-amber-400">Date:</strong> ${escapeJourneyDetail(j.date)}</div>
         <div><strong class="text-amber-400">Vehicle:</strong> ${escapeJourneyDetail(j.vehicle)}</div>
-        <div class="break-words"><strong class="text-amber-400">Trip Name:</strong> ${escapeJourneyDetail(j.tripName || 'N/A')}</div>
-        <div class="break-words"><strong class="text-amber-400">Start:</strong> ${escapeJourneyDetail(j.startPlace)}</div>
+        <div class="break-words"><strong class="text-amber-400">Trip Name:</strong> ${escapeJourneyDetail(isLocal ? 'KBT DRIVE' : (j.tripName || 'N/A'))}</div>
+        ${isLocal ? '' : `<div class="break-words"><strong class="text-amber-400">Start:</strong> ${escapeJourneyDetail(j.startPlace)}</div>`}
         ${stopsHtml}
-        <div class="break-words"><strong class="text-amber-400">Destination:</strong> ${escapeJourneyDetail(j.destination)}</div>
+        ${isLocal ? '' : `<div class="break-words"><strong class="text-amber-400">Destination:</strong> ${escapeJourneyDetail(j.destination)}</div>`}
         <div><strong class="text-amber-400">Total Distance:</strong> ${escapeJourneyDetail(j.distance)} KM</div>
         <div><strong class="text-amber-400">Start Odometer:</strong> ${escapeJourneyDetail(j.startOdo || 'Not Recorded')}</div>
         <div><strong class="text-amber-400">End Odometer:</strong> ${escapeJourneyDetail(j.endOdo || 'Not Recorded')}</div>
@@ -1525,7 +1529,7 @@
       vSelect.innerHTML = vehicles.map(v => `<option value="${v.name}" ${v.name === j.vehicle ? 'selected' : ''}>${v.name}</option>`).join('');
       document.getElementById('edit-j-name').value = j.tripName || '';
       document.getElementById('edit-j-start').value = j.startPlace || '';
-      document.getElementById('edit-j-dest').value = j.destination || '';
+      document.getElementById('edit-j-dest').value = isLocalTripJourney(j) ? 'KADAMBATHUR' : (j.destination || '');
       // Sheets stores the TOTAL driven distance. The edit form asks for the
       // one-way/base distance so ticking Round Trip can safely recalculate it.
       const savedRoundTrip = isRoundTripJourney(j.roundTrip);
@@ -1546,9 +1550,11 @@
       if(idx !== -1) {
         journeys[idx].date = document.getElementById('edit-j-date').value;
         journeys[idx].vehicle = document.getElementById('edit-j-vehicle').value;
-        journeys[idx].tripName = document.getElementById('edit-j-name').value;
-        journeys[idx].startPlace = document.getElementById('edit-j-start').value.toUpperCase();
-        journeys[idx].destination = document.getElementById('edit-j-dest').value.toUpperCase();
+        const editingLocalDrive = isLocalTripJourney(journeys[idx]);
+        journeys[idx].tripName = editingLocalDrive ? 'KBT DRIVE' : document.getElementById('edit-j-name').value;
+        journeys[idx].startPlace = editingLocalDrive ? 'KADAMBATHUR' : document.getElementById('edit-j-start').value.toUpperCase();
+        journeys[idx].destination = editingLocalDrive ? '' : document.getElementById('edit-j-dest').value.toUpperCase();
+        if (editingLocalDrive) { journeys[idx].distance = 1; journeys[idx].roundTrip = false; journeys[idx].localDrive = true; }
         const editBaseDistance = Number(document.getElementById('edit-j-dist').value) || 0;
         const editRoundTrip = !!document.getElementById('edit-j-round-trip').checked;
         // Persist one canonical value: total KM including the return journey.
@@ -1592,29 +1598,13 @@
     }
 
     function syncToSheets(type, payload) {
-      if(!sheetsWebhookUrl) {
-        console.warn('Cloud Sync skipped: Google Sheets webhook URL is missing.');
-        return Promise.resolve(false);
-      }
-
-      // Always send a real JSON boolean for journey round-trip state.
-      // This avoids sending an absent/undefined checkbox value to Apps Script.
-      const outgoingPayload = (type === 'journey' || type === 'edit_journey')
-        ? { ...payload, roundTrip: payload.roundTrip === true || String(payload.roundTrip).trim().toLowerCase() === 'true' || payload.roundTrip === 1 || String(payload.roundTrip).trim() === '1' }
-        : payload;
-
-      // Apps Script Web Apps commonly require no-cors for cross-origin POSTs.
-      // The opaque response cannot confirm the write; a subsequent GET sync
-      // reads the persisted value back from the sheet.
-      return fetch(sheetsWebhookUrl, {
+      if(!sheetsWebhookUrl) return;
+      fetch(sheetsWebhookUrl, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ type, payload: outgoingPayload })
-      }).then(() => true).catch(err => {
-        console.error('Cloud Sync Error:', err);
-        return false;
-      });
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ type, payload })
+      }).catch(err => console.error("Cloud Sync Error:", err));
     }
 
     function syncDataFromSheets(showAlert = false) {
