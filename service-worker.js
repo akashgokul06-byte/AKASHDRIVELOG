@@ -1,4 +1,4 @@
-const CACHE_NAME = "akash-drivelog-shell-v1";
+const CACHE_NAME = "akash-drivelog-shell-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
