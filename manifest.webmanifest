@@ -20,9 +20,9 @@
   "icons": [
     {
       "src": "./icons/drivelog-icon.svg",
-      "sizes": "any",
+      "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
