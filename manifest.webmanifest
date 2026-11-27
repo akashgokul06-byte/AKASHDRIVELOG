@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "AKASH DRIVELOG",
-  "short_name": "DriveLog",
+  "name": "Akash's DriveLog",
+  "short_name": "Akash's DriveLog",
   "description": "Personal Driving Intelligence System",
   "start_url": "./",
   "scope": "./",
