@@ -1,0 +1,28 @@
+{
+  "id": "./",
+  "name": "AKASH DRIVELOG",
+  "short_name": "DriveLog",
+  "description": "Personal Driving Intelligence System",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#030712",
+  "theme_color": "#030712",
+  "categories": [
+    "utilities",
+    "travel"
+  ],
+  "icons": [
+    {
+      "src": "./icons/drivelog-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
