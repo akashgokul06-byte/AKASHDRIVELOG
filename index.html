@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#030712" />
+  <meta name="description" content="AKASH DRIVELOG - Personal Driving Intelligence System" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="./icons/drivelog-icon.svg" />
+  <link rel="apple-touch-icon" href="./icons/drivelog-icon.svg" />
   <title>AKASH DRIVELOG - Personal Driving Intelligence System</title>
 
   <!-- Tailwind CSS CDN -->
@@ -1709,6 +1714,15 @@
       box.innerHTML = `<i class="fa-solid fa-circle-check mr-2 text-amber-400"></i><span>${msg}</span>`;
       document.body.appendChild(box);
       setTimeout(() => box.remove(), 3500);
+    }
+  </script>
+  <script>
+    // PWA support: register the app shell worker without changing app data or API calls.
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+          .catch(error => console.error("DriveLog service worker registration failed:", error));
+      });
     }
   </script>
 </body>
